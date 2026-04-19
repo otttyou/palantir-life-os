@@ -53,8 +53,3 @@ All pages read and write a single in-memory state object. The sandbox blocks `lo
 
 Open `index.html` directly in a browser, or serve the folder with any static server. No build step.
 
-## References
-
-- Notion dashboards: https://www.notion.com/help/dashboards
-- Notion layouts: https://www.notion.com/help/layouts
-- Notion writing and editing basics: https://www.notion.com/help/writing-and-editing-basics
