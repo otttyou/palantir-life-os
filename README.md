@@ -10,10 +10,5 @@ A Notion-style editable Life OS for entrepreneurship planning, study systems, an
 - JSON import and export
 - Light and dark mode
 
-## References
-- Notion dashboards: https://www.notion.com/help/dashboards
-- Notion layouts: https://www.notion.com/help/layouts
-- Notion writing and editing basics: https://www.notion.com/help/writing-and-editing-basics
-
 ## Run locally
 Serve the folder with any static file server and open index.html.
