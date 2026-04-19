@@ -6,12 +6,12 @@
     <title>Life OS Workspace</title>
     <meta
       name="description"
-      content="A Notion-style Life OS workspace for entrepreneurship planning, study systems, and structured personal operating design."
+      content="A Notion-style multi-page Life OS workspace for planning, study, tasks, and generated operating outputs."
     />
     <meta property="og:title" content="Life OS Workspace" />
     <meta
       property="og:description"
-      content="Editable Notion-style workspace with inputs, outputs, planning databases, and life operating system views."
+      content="Multi-page Notion-style workspace with editable inputs, generated outputs, tasks, timelines, and JSON import/export."
     />
     <meta property="og:type" content="website" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -35,7 +35,11 @@
         --accent: #2f6fed;
         --accent-soft: #edf3ff;
         --success: #197c4d;
+        --success-soft: #e5f3ec;
         --warning: #9f5f00;
+        --warning-soft: #faefd7;
+        --danger: #b23b3b;
+        --danger-soft: #fbe9e7;
         --shadow: 0 8px 24px rgba(18, 18, 18, 0.05);
       }
       [data-theme='dark'] {
@@ -51,7 +55,11 @@
         --accent: #7da8ff;
         --accent-soft: #222d42;
         --success: #6fd3a3;
+        --success-soft: #1e2f28;
         --warning: #e2a951;
+        --warning-soft: #33281a;
+        --danger: #e38a80;
+        --danger-soft: #3a2320;
         --shadow: none;
       }
 
@@ -66,8 +74,10 @@
         -webkit-font-smoothing: antialiased;
         text-rendering: optimizeLegibility;
       }
-      button, input, textarea, select { font: inherit; }
+      button, input, textarea, select { font: inherit; color: inherit; }
+      button { cursor: pointer; }
       a { color: inherit; text-decoration: none; }
+      ::selection { background: var(--accent-soft); }
 
       .workspace {
         min-height: 100vh;
@@ -76,17 +86,9 @@
         background: var(--bg);
       }
 
-      .sidebar,
-      .details {
+      .sidebar {
         background: var(--bg-soft);
         border-right: 1px solid var(--line);
-      }
-      .details {
-        border-right: 0;
-        border-left: 1px solid var(--line);
-      }
-
-      .sidebar {
         padding: 14px 12px;
         position: sticky;
         top: 0;
@@ -94,6 +96,8 @@
         overflow: auto;
       }
       .details {
+        background: var(--bg-soft);
+        border-left: 1px solid var(--line);
         padding: 16px 14px;
         position: sticky;
         top: 0;
@@ -103,6 +107,8 @@
       .main {
         min-width: 0;
         background: var(--bg);
+        display: flex;
+        flex-direction: column;
       }
 
       .brand {
@@ -112,20 +118,18 @@
         padding: 8px 8px 16px;
       }
       .brand-mark {
-        width: 24px;
-        height: 24px;
+        width: 26px;
+        height: 26px;
         border: 1px solid var(--line-strong);
         border-radius: 6px;
         display: grid;
         place-items: center;
         background: var(--panel);
+        flex-shrink: 0;
       }
       .brand-mark svg { width: 16px; height: 16px; }
       .brand-copy { min-width: 0; }
-      .brand-title {
-        font-size: 13px;
-        font-weight: 600;
-      }
+      .brand-title { font-size: 13px; font-weight: 600; }
       .brand-sub {
         margin-top: 2px;
         font-size: 11px;
@@ -140,7 +144,8 @@
       .card,
       .database,
       .callout,
-      .note-card {
+      .note-card,
+      .tile {
         border: 1px solid var(--line);
         background: var(--panel);
         border-radius: 10px;
@@ -165,11 +170,37 @@
         border-radius: 8px;
         font-size: 13px;
         color: var(--text);
+        transition: background .12s ease;
+        cursor: pointer;
       }
-      .nav-link:hover,
+      .nav-link:hover { background: var(--accent-soft); }
       .nav-link.active {
         background: var(--accent-soft);
         color: var(--text);
+      }
+      .nav-link .nav-icon {
+        width: 18px;
+        height: 18px;
+        display: inline-grid;
+        place-items: center;
+        color: var(--muted);
+      }
+      .nav-link .nav-icon svg { width: 14px; height: 14px; }
+      .nav-link.active .nav-icon { color: var(--accent); }
+      .nav-link .nav-label {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .nav-link .nav-kbd {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 10px;
+        color: var(--faint);
       }
       .nav-stack,
       .meta-stack,
@@ -180,7 +211,7 @@
         position: sticky;
         top: 0;
         z-index: 15;
-        padding: 14px 20px 10px;
+        padding: 12px 20px;
         background: color-mix(in srgb, var(--bg) 92%, transparent);
         backdrop-filter: blur(10px);
         border-bottom: 1px solid var(--line);
@@ -191,15 +222,36 @@
         justify-content: space-between;
         gap: 12px;
       }
+      .top-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        flex: 1;
+      }
+      .mobile-nav-toggle {
+        display: none;
+        border: 1px solid var(--line-strong);
+        background: var(--panel);
+        border-radius: 8px;
+        padding: 7px 9px;
+      }
+      .mobile-nav-toggle svg { width: 16px; height: 16px; display: block; }
       .breadcrumbs {
         font-size: 12px;
         color: var(--muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
       }
+      .breadcrumbs b { color: var(--text); font-weight: 600; }
       .top-actions {
         display: flex;
         align-items: center;
         gap: 8px;
         flex-wrap: wrap;
+        justify-content: flex-end;
       }
       .button,
       .view-chip,
@@ -209,40 +261,79 @@
         background: var(--panel);
         color: var(--text);
         border-radius: 8px;
-        padding: 8px 12px;
+        padding: 7px 11px;
         font-size: 12px;
-        cursor: pointer;
+        transition: background .12s ease, border-color .12s ease;
       }
+      .button:hover,
+      .view-chip:hover { background: var(--bg-soft); }
       .button.primary,
       .view-chip.active {
         background: var(--accent-soft);
         border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+        color: var(--text);
       }
+      .button.primary:hover {
+        background: color-mix(in srgb, var(--accent) 18%, var(--panel));
+      }
+      .button.ghost {
+        border-color: transparent;
+        background: transparent;
+      }
+      .button.ghost:hover { background: var(--bg-soft); }
+      .button.danger {
+        color: var(--danger);
+        border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+      }
+      .button.danger:hover { background: var(--danger-soft); }
+      .button.small { padding: 5px 8px; font-size: 11px; }
+      .tag {
+        padding: 4px 9px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      /* View container */
+      .view-wrap {
+        position: relative;
+        min-height: 100vh;
+      }
+      .view {
+        display: none;
+        animation: fadeIn .22s ease;
+      }
+      .view.active { display: block; }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
       .title-block {
-        padding: 30px 24px 22px;
+        padding: 26px 24px 20px;
         border-bottom: 1px solid var(--line);
       }
       .page-icon {
-        width: 52px;
-        height: 52px;
-        border-radius: 14px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
         border: 1px solid var(--line);
         background: var(--bg-soft);
         display: grid;
         place-items: center;
-        margin-bottom: 16px;
+        margin-bottom: 14px;
       }
-      .page-icon svg { width: 26px; height: 26px; }
+      .page-icon svg { width: 24px; height: 24px; color: var(--text); }
       .page-title {
         margin: 0;
-        font-size: clamp(30px, 4vw, 48px);
-        line-height: 1.04;
-        letter-spacing: -.04em;
+        font-size: clamp(26px, 3.4vw, 40px);
+        line-height: 1.08;
+        letter-spacing: -.03em;
+        word-wrap: break-word;
       }
       .page-subtitle {
         margin-top: 10px;
-        max-width: 820px;
-        font-size: 15px;
+        max-width: 780px;
+        font-size: 14px;
         color: var(--muted);
         line-height: 1.6;
       }
@@ -251,26 +342,32 @@
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 10px;
-        padding: 18px 24px 8px;
+        padding: 16px 24px 6px;
       }
       .property {
         border: 1px solid var(--line);
         background: var(--bg-softer);
         border-radius: 10px;
-        padding: 12px;
+        padding: 11px 12px;
+        min-width: 0;
       }
       .property-label {
         font-size: 11px;
         color: var(--muted);
-        margin-bottom: 6px;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
       }
       .property-value {
         font-size: 13px;
         font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .content {
-        padding: 20px 24px 40px;
+        padding: 20px 24px 60px;
         display: grid;
         gap: 18px;
       }
@@ -280,40 +377,82 @@
       }
       .section-head {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
         gap: 12px;
+        flex-wrap: wrap;
       }
       .section-title {
         margin: 0;
-        font-size: 20px;
-        letter-spacing: -.02em;
+        font-size: 18px;
+        letter-spacing: -.015em;
+        font-weight: 600;
       }
       .section-note {
         font-size: 13px;
         color: var(--muted);
+        margin-top: 3px;
       }
-      .card {
-        padding: 16px;
-      }
+      .card { padding: 16px; }
       .two-col {
         display: grid;
         grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
-        gap: 16px;
+        gap: 14px;
       }
       .three-col {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 12px;
       }
+      .four-col {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      /* KPI tiles */
+      .tile {
+        padding: 14px;
+        display: grid;
+        gap: 6px;
+      }
+      .tile-label {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .05em;
+      }
+      .tile-value {
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -.02em;
+      }
+      .tile-sub {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .tile-bar {
+        margin-top: 4px;
+        height: 4px;
+        background: var(--bg-soft);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .tile-bar > span {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+        border-radius: 3px;
+        transition: width .3s ease;
+      }
 
       .editor-surface {
         position: relative;
-        min-height: 270px;
+        min-height: 240px;
         border: 1px solid var(--line);
         border-radius: 10px;
         background: var(--bg-softer);
-        padding: 14px 14px 14px 44px;
+        padding: 14px 14px 14px 40px;
       }
       .editor-handle {
         position: absolute;
@@ -325,7 +464,7 @@
       }
       textarea.editor {
         width: 100%;
-        min-height: 220px;
+        min-height: 200px;
         resize: vertical;
         border: 0;
         outline: none;
@@ -338,11 +477,10 @@
       .slash-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
+        gap: 6px;
       }
       .slash-chip {
-        padding: 6px 10px;
+        padding: 5px 9px;
         border-radius: 999px;
         background: var(--panel);
         border: 1px solid var(--line);
@@ -350,18 +488,9 @@
         color: var(--muted);
       }
 
-      .form-grid {
-        display: grid;
-        gap: 10px;
-      }
-      .field {
-        display: grid;
-        gap: 6px;
-      }
-      .field label {
-        font-size: 12px;
-        font-weight: 600;
-      }
+      .form-grid { display: grid; gap: 10px; }
+      .field { display: grid; gap: 6px; min-width: 0; }
+      .field label { font-size: 12px; font-weight: 600; }
       .field input,
       .field select,
       .field textarea {
@@ -370,40 +499,40 @@
         border-radius: 8px;
         background: var(--panel);
         color: var(--text);
-        padding: 10px 12px;
+        padding: 9px 11px;
+        outline: none;
+        transition: border-color .12s ease, box-shadow .12s ease;
       }
-      .field textarea { min-height: 88px; resize: vertical; }
+      .field input:focus,
+      .field select:focus,
+      .field textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .field textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+      .field .hint { font-size: 11px; color: var(--muted); }
 
-      .database {
-        overflow: hidden;
-      }
+      .database { overflow: hidden; }
       .database-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 12px 14px;
+        padding: 11px 14px;
         border-bottom: 1px solid var(--line);
         background: var(--bg-softer);
-      }
-      .database-title {
-        font-size: 14px;
-        font-weight: 600;
-      }
-      .database-tools {
-        display: flex;
-        gap: 8px;
         flex-wrap: wrap;
       }
+      .database-title { font-size: 14px; font-weight: 600; }
+      .database-tools { display: flex; gap: 6px; flex-wrap: wrap; }
       .table-wrap { overflow: auto; }
       table {
         width: 100%;
         border-collapse: collapse;
         min-width: 620px;
       }
-      th,
-      td {
-        padding: 12px 14px;
+      th, td {
+        padding: 11px 14px;
         border-bottom: 1px solid var(--line);
         text-align: left;
         vertical-align: top;
@@ -415,19 +544,24 @@
         letter-spacing: .05em;
         color: var(--muted);
         background: var(--bg-softer);
+        font-weight: 600;
       }
       tr:last-child td { border-bottom: 0; }
+      td .row-actions { display: flex; gap: 6px; }
       .status-pill {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 5px 8px;
+        padding: 4px 9px;
         border-radius: 999px;
         font-size: 11px;
+        white-space: nowrap;
       }
-      .status-green { background: color-mix(in srgb, var(--success) 10%, var(--panel)); color: var(--success); }
-      .status-blue { background: color-mix(in srgb, var(--accent) 10%, var(--panel)); color: var(--accent); }
-      .status-amber { background: color-mix(in srgb, var(--warning) 12%, var(--panel)); color: var(--warning); }
+      .status-green { background: var(--success-soft); color: var(--success); border-color: color-mix(in srgb, var(--success) 30%, var(--line)); }
+      .status-blue { background: var(--accent-soft); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); }
+      .status-amber { background: var(--warning-soft); color: var(--warning); border-color: color-mix(in srgb, var(--warning) 30%, var(--line)); }
+      .status-red { background: var(--danger-soft); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, var(--line)); }
+      .status-neutral { background: var(--bg-soft); color: var(--muted); }
 
       .callout {
         padding: 14px;
@@ -441,34 +575,38 @@
         height: 26px;
         border-radius: 8px;
         background: var(--accent-soft);
+        color: var(--accent);
         display: grid;
         place-items: center;
-        font-size: 14px;
+        font-size: 13px;
+        font-weight: 600;
+        flex-shrink: 0;
       }
       .callout-copy {
         font-size: 13px;
-        color: var(--muted);
+        color: var(--text);
         line-height: 1.6;
       }
+      .callout-copy strong { color: var(--text); }
 
       .output-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 12px;
       }
-      .note-card {
-        padding: 14px;
-      }
+      .note-card { padding: 14px; }
       .note-label {
         font-size: 11px;
         color: var(--muted);
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         text-transform: uppercase;
+        letter-spacing: .05em;
       }
       .note-value {
-        font-size: 14px;
+        font-size: 13.5px;
         line-height: 1.6;
         white-space: pre-wrap;
+        word-wrap: break-word;
       }
 
       .timeline {
@@ -481,8 +619,8 @@
         content: '';
         position: absolute;
         left: 6px;
-        top: 0;
-        bottom: 0;
+        top: 4px;
+        bottom: 4px;
         width: 1px;
         background: var(--line-strong);
       }
@@ -505,118 +643,334 @@
         font-size: 12px;
         color: var(--muted);
         margin-bottom: 3px;
+        font-weight: 500;
       }
       .timeline-copy {
         font-size: 13px;
         line-height: 1.6;
       }
 
+      /* Tasks */
+      .task-list {
+        display: grid;
+        gap: 6px;
+      }
+      .task {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        transition: background .12s ease;
+      }
+      .task:hover { background: var(--bg-softer); }
+      .task.done .task-text { color: var(--muted); text-decoration: line-through; }
+      .task-check {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 1.5px solid var(--line-strong);
+        border-radius: 4px;
+        background: var(--panel);
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+      .task-check:checked {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .task-check:checked::after {
+        content: '';
+        width: 4px;
+        height: 8px;
+        border-right: 2px solid white;
+        border-bottom: 2px solid white;
+        transform: rotate(45deg) translate(-1px, -1px);
+      }
+      .task-text {
+        flex: 1;
+        font-size: 13.5px;
+        min-width: 0;
+        overflow-wrap: break-word;
+      }
+      .task-track {
+        font-size: 11px;
+        color: var(--muted);
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: var(--bg-soft);
+        white-space: nowrap;
+      }
+      .task-del {
+        border: 0;
+        background: transparent;
+        color: var(--faint);
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      .task-del:hover { color: var(--danger); background: var(--danger-soft); }
+
+      .task-add {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .task-add input {
+        flex: 1;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        padding: 9px 11px;
+        background: var(--panel);
+        outline: none;
+      }
+      .task-add input:focus { border-color: var(--accent); }
+      .task-add select {
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        padding: 9px 10px;
+        background: var(--panel);
+      }
+
+      /* Dashboard agenda list */
+      .agenda {
+        display: grid;
+        gap: 6px;
+      }
+      .agenda-item {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 9px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg-softer);
+        font-size: 13px;
+      }
+      .agenda-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex-shrink: 0;
+      }
+      .agenda-empty {
+        padding: 14px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 12.5px;
+        border: 1px dashed var(--line-strong);
+        border-radius: 8px;
+        background: var(--bg-softer);
+      }
+
+      /* Detail panel */
       .detail-title {
         margin: 0 0 10px;
-        font-size: 15px;
+        font-size: 14px;
+        font-weight: 600;
       }
       .stat-row {
         display: flex;
         justify-content: space-between;
         gap: 10px;
-        padding: 8px 0;
+        padding: 7px 0;
         border-top: 1px solid var(--line);
-        font-size: 13px;
+        font-size: 12.5px;
       }
       .stat-row:first-of-type { border-top: 0; }
+      .stat-row .value { color: var(--text); }
       .mono {
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 12px;
+        font-size: 11.5px;
       }
       .source-link {
         font-size: 12px;
         color: var(--muted);
         overflow-wrap: anywhere;
+        line-height: 1.5;
       }
       .source-link:hover { color: var(--accent); }
 
-      @media (max-width: 1200px) {
-        .workspace {
-          grid-template-columns: 240px minmax(0, 1fr);
-        }
-        .details {
-          display: none;
-        }
+      .code-block {
+        background: var(--bg-soft);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 12px;
+        max-height: 380px;
+        overflow: auto;
+        white-space: pre;
+        color: var(--text);
+        line-height: 1.55;
       }
-      @media (max-width: 920px) {
+
+      .toast {
+        position: fixed;
+        bottom: 22px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--text);
+        color: var(--bg);
+        padding: 9px 16px;
+        border-radius: 999px;
+        font-size: 12.5px;
+        font-weight: 500;
+        box-shadow: 0 8px 24px rgba(0,0,0,.18);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .2s ease, transform .2s ease;
+        z-index: 100;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* Responsive */
+      @media (max-width: 1200px) {
+        .workspace { grid-template-columns: 240px minmax(0, 1fr); }
+        .details { display: none; }
+        .four-col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (max-width: 820px) {
         .workspace { grid-template-columns: 1fr; }
-        .sidebar,
-        .details {
-          position: relative;
-          height: auto;
-          border-right: 0;
-          border-left: 0;
+        .sidebar {
+          position: fixed;
+          inset: 0;
+          height: 100vh;
+          width: min(300px, 85vw);
+          z-index: 50;
+          border-right: 1px solid var(--line);
+          transform: translateX(-100%);
+          transition: transform .22s ease;
+          box-shadow: 0 20px 60px rgba(0,0,0,.18);
         }
-        .sidebar { border-bottom: 1px solid var(--line); }
+        .sidebar.open { transform: translateX(0); }
+        .sidebar-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,.3);
+          z-index: 40;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity .22s ease;
+        }
+        .sidebar-backdrop.open {
+          opacity: 1;
+          pointer-events: auto;
+        }
+        .mobile-nav-toggle { display: inline-grid; place-items: center; }
         .property-bar,
         .three-col,
         .output-grid,
-        .two-col {
+        .two-col,
+        .four-col {
           grid-template-columns: 1fr;
         }
-        .top-row {
-          align-items: flex-start;
-          flex-direction: column;
-        }
-      }
-      @media (max-width: 640px) {
-        .title-block,
+        .top-actions .button { padding: 6px 9px; font-size: 11.5px; }
+        .title-block { padding: 22px 16px 18px; }
         .content,
         .property-bar,
-        .topbar {
-          padding-left: 14px;
-          padding-right: 14px;
-        }
-        .page-title { font-size: 34px; }
+        .topbar { padding-left: 16px; padding-right: 16px; }
+        .page-title { font-size: 26px; }
+      }
+      @media (max-width: 480px) {
+        .top-actions { gap: 6px; }
+        .top-actions .button { padding: 6px 8px; font-size: 11px; }
+      }
+
+      /* Print */
+      @media print {
+        .sidebar, .details, .topbar { display: none; }
+        .workspace { grid-template-columns: 1fr; }
+        .view { display: block !important; page-break-before: always; }
       }
     </style>
   </head>
   <body>
+    <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
     <div class="workspace">
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
         <div class="brand">
           <div class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M6 4h12M6 12h12M6 20h8" />
             </svg>
           </div>
           <div class="brand-copy">
             <div class="brand-title">Life OS Workspace</div>
-            <div class="brand-sub">Notion-style personal operating system</div>
+            <div class="brand-sub">Personal operating system</div>
           </div>
         </div>
 
         <div class="sidebar-block">
-          <div class="block-label">Pages</div>
-          <div class="nav-stack">
-            <a class="nav-link active" href="#brief" data-testid="link-page-brief"><span>Founder brief</span><span>⌘1</span></a>
-            <a class="nav-link" href="#plan" data-testid="link-page-plan"><span>Long-term plan</span><span>⌘2</span></a>
-            <a class="nav-link" href="#study" data-testid="link-page-study"><span>Study system</span><span>⌘3</span></a>
-            <a class="nav-link" href="#output" data-testid="link-page-output"><span>Generated output</span><span>⌘4</span></a>
-            <a class="nav-link" href="#sources" data-testid="link-page-sources"><span>References</span><span>⌘5</span></a>
-          </div>
+          <div class="block-label">Workspace</div>
+          <nav class="nav-stack" id="primaryNav">
+            <a class="nav-link" data-route="dashboard" href="#/dashboard" data-testid="link-page-dashboard">
+              <span class="nav-label">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
+                Dashboard
+              </span>
+              <span class="nav-kbd">1</span>
+            </a>
+            <a class="nav-link" data-route="planner" href="#/planner" data-testid="link-page-planner">
+              <span class="nav-label">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span>
+                Planner
+              </span>
+              <span class="nav-kbd">2</span>
+            </a>
+            <a class="nav-link" data-route="study" href="#/study" data-testid="link-page-study">
+              <span class="nav-label">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h11v16H6a2 2 0 0 0-2 2V5z"/><path d="M8 7h6M8 11h6"/></svg></span>
+                Study
+              </span>
+              <span class="nav-kbd">3</span>
+            </a>
+            <a class="nav-link" data-route="tasks" href="#/tasks" data-testid="link-page-tasks">
+              <span class="nav-label">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+                Tasks
+              </span>
+              <span class="nav-kbd">4</span>
+            </a>
+            <a class="nav-link" data-route="generator" href="#/generator" data-testid="link-page-generator">
+              <span class="nav-label">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.4 5.2L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.6-1.8L12 2z"/></svg></span>
+                Generator
+              </span>
+              <span class="nav-kbd">5</span>
+            </a>
+            <a class="nav-link" data-route="exports" href="#/exports" data-testid="link-page-exports">
+              <span class="nav-label">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></span>
+                Exports
+              </span>
+              <span class="nav-kbd">6</span>
+            </a>
+          </nav>
         </div>
 
         <div class="sidebar-block">
-          <div class="block-label">Views</div>
+          <div class="block-label">Quick actions</div>
           <div class="quick-stack">
-            <button class="view-chip active" id="viewWriter" data-view="writer" data-testid="button-view-writer">Writer view</button>
-            <button class="view-chip" id="viewPlanner" data-view="planner" data-testid="button-view-planner">Planner view</button>
-            <button class="view-chip" id="viewReview" data-view="review" data-testid="button-view-review">Review view</button>
+            <button class="view-chip" id="sidebarGenerate" data-testid="button-sidebar-generate">Regenerate outputs</button>
+            <button class="view-chip" id="sidebarReset" data-testid="button-sidebar-reset">Reset to defaults</button>
           </div>
         </div>
 
         <div class="sidebar-block">
-          <div class="block-label">Template notes</div>
+          <div class="block-label">Notes</div>
           <div class="meta-stack">
-            <div class="source-link">Edit mode and stable widget layouts informed by Notion dashboard guidance.</div>
-            <div class="source-link">Page sections and details-panel structure informed by Notion layouts guidance.</div>
-            <div class="source-link">Block-like writing surface informed by Notion writing and editing guidance.</div>
+            <div class="source-link">State lives in memory for this session. Use Exports to save your JSON.</div>
+            <div class="source-link">Navigation uses URL hash, so links and refreshes stay stable when deployed.</div>
           </div>
         </div>
       </aside>
@@ -624,503 +978,1244 @@
       <main class="main">
         <div class="topbar">
           <div class="top-row">
-            <div class="breadcrumbs">Home / Life OS / Founder operating page</div>
+            <div class="top-left">
+              <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Open navigation" data-testid="button-mobile-nav">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+              </button>
+              <div class="breadcrumbs" id="breadcrumbs">Home / Life OS / <b>Dashboard</b></div>
+            </div>
             <div class="top-actions">
-              <button class="button" id="themeToggle" data-testid="button-theme-toggle">Toggle theme</button>
-              <button class="button" id="generateButton" data-testid="button-generate-output">Generate output</button>
-              <button class="button" id="exportJson" data-testid="button-export-json">Export JSON</button>
-              <label class="button primary" for="importJson" data-testid="button-import-json">Import JSON</label>
+              <button class="button" id="themeToggle" data-testid="button-theme-toggle" aria-label="Toggle theme">Theme</button>
+              <button class="button primary" id="generateButton" data-testid="button-generate-output">Generate</button>
+              <button class="button" id="exportJson" data-testid="button-export-json">Export</button>
+              <label class="button" for="importJson" data-testid="button-import-json">Import</label>
               <input id="importJson" type="file" accept="application/json" hidden />
             </div>
           </div>
         </div>
 
-        <section class="title-block">
-          <div class="page-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-              <rect x="4" y="4" width="16" height="16" rx="4" />
-              <path d="M8 8h8M8 12h8M8 16h5" />
-            </svg>
-          </div>
-          <h1 class="page-title">Palantirization of life management, rebuilt as an editable workspace</h1>
-          <div class="page-subtitle">
-            This version behaves more like a Notion page: you input your horizon, venture thesis, constraints, and study priorities, then the workspace generates a structured operating brief, plan timeline, and study outputs.
-          </div>
-        </section>
+        <div class="view-wrap" id="viewWrap">
 
-        <section class="property-bar">
-          <div class="property">
-            <div class="property-label">Mode</div>
-            <div class="property-value" id="propertyMode">Writer view</div>
-          </div>
-          <div class="property">
-            <div class="property-label">Primary profile</div>
-            <div class="property-value" id="propertyProfile">Founder-operator</div>
-          </div>
-          <div class="property">
-            <div class="property-label">Planning horizon</div>
-            <div class="property-value" id="propertyHorizon">7 years</div>
-          </div>
-          <div class="property">
-            <div class="property-label">Weekly study target</div>
-            <div class="property-value" id="propertyStudy">24 hours</div>
-          </div>
-        </section>
-
-        <div class="content">
-          <section class="section" id="brief">
-            <div class="section-head">
-              <div>
-                <h2 class="section-title">Founder brief</h2>
-                <div class="section-note">Type directly into the page like a working operating note.</div>
+          <!-- DASHBOARD -->
+          <section class="view" id="view-dashboard" data-view="dashboard">
+            <div class="title-block">
+              <div class="page-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <rect x="3" y="3" width="7" height="9" rx="1.5"/>
+                  <rect x="14" y="3" width="7" height="5" rx="1.5"/>
+                  <rect x="14" y="12" width="7" height="9" rx="1.5"/>
+                  <rect x="3" y="16" width="7" height="5" rx="1.5"/>
+                </svg>
               </div>
-              <div class="slash-row">
-                <span class="slash-chip">/brief</span>
-                <span class="slash-chip">/timeline</span>
-                <span class="slash-chip">/study</span>
-                <span class="slash-chip">/decision</span>
-              </div>
+              <h1 class="page-title">Dashboard</h1>
+              <p class="page-subtitle">A calm overview of the workspace. Your mission, horizons, study frontier, and open work all meet here. Switch pages from the sidebar to edit inputs or generate outputs.</p>
             </div>
 
-            <div class="two-col">
-              <div class="card">
-                <div class="block-label">Working note</div>
-                <div class="editor-surface">
-                  <div class="editor-handle">⋮⋮</div>
-                  <textarea
-                    id="missionInput"
-                    class="editor"
-                    data-testid="textarea-mission"
-                  >Build a compounding personal operating system that turns AI, writing, entrepreneurship, and disciplined study into long-term leverage. The goal is not just productivity. The goal is asymmetric capability, durable reputation, and selective capital freedom.</textarea>
-                </div>
+            <section class="property-bar">
+              <div class="property">
+                <div class="property-label">Profile</div>
+                <div class="property-value" id="kpiProfile">Founder-operator</div>
               </div>
+              <div class="property">
+                <div class="property-label">Horizon</div>
+                <div class="property-value" id="kpiHorizon">7 years</div>
+              </div>
+              <div class="property">
+                <div class="property-label">Weekly study</div>
+                <div class="property-value" id="kpiStudy">24 hours</div>
+              </div>
+              <div class="property">
+                <div class="property-label">Open tasks</div>
+                <div class="property-value" id="kpiTasks">0 open</div>
+              </div>
+            </section>
 
-              <div class="card">
-                <div class="block-label">Page properties</div>
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="profileInput">Profile</label>
-                    <select id="profileInput" data-testid="select-profile">
-                      <option>Founder-operator</option>
-                      <option>Builder</option>
-                      <option>Scholar-founder</option>
-                    </select>
+            <div class="content">
+              <section class="section">
+                <div class="section-head">
+                  <div>
+                    <h2 class="section-title">Operating snapshot</h2>
+                    <div class="section-note">Auto-generated from your inputs across Planner and Study pages.</div>
                   </div>
-                  <div class="field">
-                    <label for="horizonInput">Planning horizon</label>
-                    <select id="horizonInput" data-testid="select-horizon">
-                      <option value="3">3 years</option>
-                      <option value="7" selected>7 years</option>
-                      <option value="12">12 years</option>
-                    </select>
+                  <button class="button small primary" data-route-link="generator" data-testid="button-open-generator">Open Generator →</button>
+                </div>
+
+                <div class="four-col">
+                  <div class="tile">
+                    <div class="tile-label">Focus ratio</div>
+                    <div class="tile-value" id="tileFocus">70/20/10</div>
+                    <div class="tile-sub">Build · Learn · Distribute</div>
                   </div>
-                  <div class="field">
-                    <label for="studyInput">Weekly study hours</label>
-                    <input id="studyInput" data-testid="input-study-hours" type="number" min="1" value="24" />
+                  <div class="tile">
+                    <div class="tile-label">Milestones</div>
+                    <div class="tile-value" id="tileMilestones">5</div>
+                    <div class="tile-sub" id="tileMilestonesSub">Across current horizon</div>
                   </div>
-                  <div class="field">
-                    <label for="thesisInput">Venture thesis</label>
-                    <textarea id="thesisInput" data-testid="textarea-thesis">Build a narrow AI-native product and knowledge business that compounds through distribution, premium insight, and reusable systems.</textarea>
+                  <div class="tile">
+                    <div class="tile-label">Task progress</div>
+                    <div class="tile-value" id="tileTaskProgress">0%</div>
+                    <div class="tile-bar"><span id="tileTaskBar" style="width:0%"></span></div>
+                  </div>
+                  <div class="tile">
+                    <div class="tile-label">Last generated</div>
+                    <div class="tile-value" id="tileGenerated" style="font-size:15px">Not yet</div>
+                    <div class="tile-sub">Run Generate to refresh outputs.</div>
                   </div>
                 </div>
-              </div>
+              </section>
+
+              <section class="section">
+                <div class="two-col">
+                  <div class="card">
+                    <div class="block-label">Mission</div>
+                    <div class="note-value" id="dashMission" style="font-size:14.5px; line-height:1.65"></div>
+                  </div>
+                  <div class="card">
+                    <div class="block-label">Next up</div>
+                    <div class="agenda" id="dashAgenda"></div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="section">
+                <div class="section-head">
+                  <div>
+                    <h2 class="section-title">Horizon timeline</h2>
+                    <div class="section-note">High-level phases from the Planner, keyed to your selected horizon.</div>
+                  </div>
+                  <button class="button small" data-route-link="planner" data-testid="button-open-planner">Edit in Planner</button>
+                </div>
+                <div class="card">
+                  <div class="timeline" id="dashTimeline"></div>
+                </div>
+              </section>
             </div>
           </section>
 
-          <section class="section" id="plan">
-            <div class="section-head">
-              <div>
-                <h2 class="section-title">Long-term plan database</h2>
-                <div class="section-note">A clean, app-like dashboard view with stable rows and editable properties follows Notion’s dashboard principles.</div>
+          <!-- PLANNER -->
+          <section class="view" id="view-planner" data-view="planner">
+            <div class="title-block">
+              <div class="page-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <rect x="3" y="4" width="18" height="17" rx="2"/>
+                  <path d="M3 9h18M8 2v4M16 2v4"/>
+                </svg>
               </div>
+              <h1 class="page-title">Planner</h1>
+              <p class="page-subtitle">Set the horizon, venture thesis, and long-term milestones. Edit cells directly in the milestone table — changes flow through to the dashboard and generator.</p>
             </div>
 
-            <div class="database">
-              <div class="database-head">
-                <div class="database-title">Milestones</div>
-                <div class="database-tools">
-                  <span class="tag">Table</span>
-                  <span class="tag">Timeline</span>
-                  <span class="tag">By phase</span>
+            <div class="content">
+              <section class="section">
+                <div class="two-col">
+                  <div class="card">
+                    <div class="block-label">Working note</div>
+                    <div class="editor-surface">
+                      <div class="editor-handle">⋮⋮</div>
+                      <textarea
+                        id="missionInput"
+                        class="editor"
+                        data-testid="textarea-mission"
+                      >Build a compounding personal operating system that turns AI, writing, entrepreneurship, and disciplined study into long-term leverage. The goal is not just productivity. The goal is asymmetric capability, durable reputation, and selective capital freedom.</textarea>
+                    </div>
+                    <div class="slash-row" style="margin-top:10px">
+                      <span class="slash-chip">/mission</span>
+                      <span class="slash-chip">/thesis</span>
+                      <span class="slash-chip">/horizon</span>
+                      <span class="slash-chip">/milestone</span>
+                    </div>
+                  </div>
+
+                  <div class="card">
+                    <div class="block-label">Page properties</div>
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="profileInput">Profile</label>
+                        <select id="profileInput" data-testid="select-profile">
+                          <option>Founder-operator</option>
+                          <option>Builder</option>
+                          <option>Scholar-founder</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="horizonInput">Planning horizon</label>
+                        <select id="horizonInput" data-testid="select-horizon">
+                          <option value="3">3 years</option>
+                          <option value="7" selected>7 years</option>
+                          <option value="12">12 years</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="studyInput">Weekly study hours</label>
+                        <input id="studyInput" data-testid="input-study-hours" type="number" min="1" max="80" value="24" />
+                      </div>
+                      <div class="field">
+                        <label for="thesisInput">Venture thesis</label>
+                        <textarea id="thesisInput" data-testid="textarea-thesis">Build a narrow AI-native product and knowledge business that compounds through distribution, premium insight, and reusable systems.</textarea>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Phase</th>
-                      <th>Focus</th>
-                      <th>Status</th>
-                      <th>Output</th>
-                    </tr>
-                  </thead>
-                  <tbody id="milestoneTable"></tbody>
-                </table>
-              </div>
+              </section>
+
+              <section class="section">
+                <div class="section-head">
+                  <div>
+                    <h2 class="section-title">Milestones</h2>
+                    <div class="section-note">Every cell is editable. Pick a horizon to load a template, or edit in place and add your own rows.</div>
+                  </div>
+                  <div class="database-tools">
+                    <button class="button small" id="milestoneAdd" data-testid="button-milestone-add">+ Add row</button>
+                    <button class="button small ghost" id="milestoneReset" data-testid="button-milestone-reset">Reset from horizon</button>
+                  </div>
+                </div>
+
+                <div class="database">
+                  <div class="database-head">
+                    <div class="database-title" id="milestoneCount">0 milestones</div>
+                    <div class="database-tools">
+                      <span class="tag">Table</span>
+                      <span class="tag">By phase</span>
+                    </div>
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th style="width:14%">Phase</th>
+                          <th style="width:38%">Focus</th>
+                          <th style="width:14%">Status</th>
+                          <th style="width:26%">Output</th>
+                          <th style="width:8%"></th>
+                        </tr>
+                      </thead>
+                      <tbody id="milestoneTable"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
             </div>
           </section>
 
-          <section class="section" id="study">
-            <div class="section-head">
-              <div>
-                <h2 class="section-title">Study system</h2>
-                <div class="section-note">Property groups and modules mirror Notion page layout ideas for surfacing what matters.</div>
+          <!-- STUDY -->
+          <section class="view" id="view-study" data-view="study">
+            <div class="title-block">
+              <div class="page-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M4 5a2 2 0 0 1 2-2h11v16H6a2 2 0 0 0-2 2V5z"/>
+                  <path d="M8 7h6M8 11h6"/>
+                </svg>
               </div>
+              <h1 class="page-title">Study System</h1>
+              <p class="page-subtitle">Name three study tracks, set cadence and energy, and describe the bottleneck. The generator will turn this into an explicit weekly study brief.</p>
             </div>
 
-            <div class="three-col">
-              <div class="card">
-                <div class="block-label">Study tracks</div>
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="trackOne">Track one</label>
-                    <input id="trackOne" data-testid="input-track-one" value="AI systems" />
+            <div class="content">
+              <section class="section">
+                <div class="three-col">
+                  <div class="card">
+                    <div class="block-label">Study tracks</div>
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="trackOne">Track one</label>
+                        <input id="trackOne" data-testid="input-track-one" value="AI systems" />
+                      </div>
+                      <div class="field">
+                        <label for="trackTwo">Track two</label>
+                        <input id="trackTwo" data-testid="input-track-two" value="Writing" />
+                      </div>
+                      <div class="field">
+                        <label for="trackThree">Track three</label>
+                        <input id="trackThree" data-testid="input-track-three" value="Sales and distribution" />
+                      </div>
+                    </div>
                   </div>
-                  <div class="field">
-                    <label for="trackTwo">Track two</label>
-                    <input id="trackTwo" data-testid="input-track-two" value="Writing" />
+                  <div class="card">
+                    <div class="block-label">Constraints</div>
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="constraintInput">Current bottleneck</label>
+                        <textarea id="constraintInput" data-testid="textarea-constraint">Too many interesting directions. Need sharper sequencing between learning, building, and selling.</textarea>
+                      </div>
+                      <div class="field">
+                        <label for="artifactInput">Cycle artifact</label>
+                        <input id="artifactInput" data-testid="input-artifact" value="One essay + one working prototype" />
+                        <span class="hint">What should every study cycle produce?</span>
+                      </div>
+                    </div>
                   </div>
-                  <div class="field">
-                    <label for="trackThree">Track three</label>
-                    <input id="trackThree" data-testid="input-track-three" value="Sales and distribution" />
+                  <div class="card">
+                    <div class="block-label">Cadence</div>
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="cadenceInput">Review rhythm</label>
+                        <select id="cadenceInput" data-testid="select-cadence">
+                          <option>Twice weekly</option>
+                          <option selected>Weekly + monthly</option>
+                          <option>Daily + weekly</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="energyInput">Energy posture</label>
+                        <select id="energyInput" data-testid="select-energy">
+                          <option>High intensity</option>
+                          <option selected>Sustainable intensity</option>
+                          <option>Low-noise deep work</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="card">
-                <div class="block-label">Constraints</div>
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="constraintInput">Current bottleneck</label>
-                    <textarea id="constraintInput" data-testid="textarea-constraint">Too many interesting directions. Need sharper sequencing between learning, building, and selling.</textarea>
-                  </div>
-                </div>
-              </div>
-              <div class="card">
-                <div class="block-label">Cadence</div>
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="cadenceInput">Review rhythm</label>
-                    <select id="cadenceInput" data-testid="select-cadence">
-                      <option>Twice weekly</option>
-                      <option selected>Weekly + monthly</option>
-                      <option>Daily + weekly</option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label for="energyInput">Energy posture</label>
-                    <select id="energyInput" data-testid="select-energy">
-                      <option>High intensity</option>
-                      <option selected>Sustainable intensity</option>
-                      <option>Low-noise deep work</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div class="callout">
-              <div class="callout-icon">i</div>
-              <div class="callout-copy" id="studyCallout">
-                The study system should produce one visible artifact per cycle so that learning compounds into judgment, proof of work, and offer quality.
-              </div>
+                <div class="callout">
+                  <div class="callout-icon">i</div>
+                  <div class="callout-copy" id="studyCallout">
+                    The study system should produce one visible artifact per cycle so that learning compounds into judgment, proof of work, and offer quality.
+                  </div>
+                </div>
+              </section>
+
+              <section class="section">
+                <div class="section-head">
+                  <div>
+                    <h2 class="section-title">Weekly budget</h2>
+                    <div class="section-note">Hour allocation is derived from your profile and weekly study hours.</div>
+                  </div>
+                </div>
+                <div class="three-col" id="studyBudget"></div>
+              </section>
             </div>
           </section>
 
-          <section class="section" id="output">
-            <div class="section-head">
-              <div>
-                <h2 class="section-title">Generated output</h2>
-                <div class="section-note">The page turns your inputs into an executive operating brief, a timeline, and a study execution plan.</div>
+          <!-- TASKS -->
+          <section class="view" id="view-tasks" data-view="tasks">
+            <div class="title-block">
+              <div class="page-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M9 11l3 3L22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
               </div>
+              <h1 class="page-title">Tasks</h1>
+              <p class="page-subtitle">A light task list tied to your study tracks. Check items as you complete them — progress flows to the dashboard tile.</p>
             </div>
 
-            <div class="output-grid">
-              <div class="note-card">
-                <div class="note-label">Operating brief</div>
-                <div class="note-value" id="operatingBrief"></div>
-              </div>
-              <div class="note-card">
-                <div class="note-label">Primary risk</div>
-                <div class="note-value" id="primaryRisk"></div>
-              </div>
-              <div class="note-card">
-                <div class="note-label">Next 30 days</div>
-                <div class="note-value" id="nextThirty"></div>
-              </div>
-            </div>
+            <div class="content">
+              <section class="section">
+                <div class="card">
+                  <div class="block-label">Add a task</div>
+                  <div class="task-add">
+                    <input id="taskInput" placeholder="What needs to ship this week?" data-testid="input-task" />
+                    <select id="taskTrack" data-testid="select-task-track"></select>
+                    <button class="button primary" id="taskAdd" data-testid="button-task-add">Add</button>
+                  </div>
+                </div>
+              </section>
 
-            <div class="two-col" style="margin-top: 14px;">
-              <div class="card">
-                <div class="block-label">Timeline view</div>
-                <div class="timeline" id="timelineView"></div>
-              </div>
-              <div class="card">
-                <div class="block-label">Study output</div>
-                <div class="note-value" id="studyOutput"></div>
-              </div>
+              <section class="section">
+                <div class="section-head">
+                  <div>
+                    <h2 class="section-title" id="tasksHeading">Open tasks</h2>
+                    <div class="section-note" id="tasksNote">Sorted newest first. Toggle the checkbox to mark complete.</div>
+                  </div>
+                  <div class="database-tools">
+                    <button class="view-chip active" data-filter="all" data-testid="button-filter-all">All</button>
+                    <button class="view-chip" data-filter="open" data-testid="button-filter-open">Open</button>
+                    <button class="view-chip" data-filter="done" data-testid="button-filter-done">Done</button>
+                  </div>
+                </div>
+                <div class="task-list" id="taskList"></div>
+              </section>
             </div>
           </section>
 
-          <section class="section" id="sources">
-            <div class="section-head">
-              <div>
-                <h2 class="section-title">Reference notes</h2>
-                <div class="section-note">These external references informed the layout and interaction model.</div>
+          <!-- GENERATOR -->
+          <section class="view" id="view-generator" data-view="generator">
+            <div class="title-block">
+              <div class="page-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M12 2l2.4 5.2L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.6-1.8L12 2z"/>
+                </svg>
               </div>
+              <h1 class="page-title">Generator</h1>
+              <p class="page-subtitle">This page turns your planner and study inputs into an executive operating brief, primary risk, a 30-day plan, timeline, and study output. Click Generate above or inline below.</p>
             </div>
 
-            <div class="three-col">
-              <div class="note-card">
-                <div class="note-label">Dashboard structure</div>
-                <a class="source-link" href="https://www.notion.com/help/dashboards" target="_blank" rel="noreferrer">notion.com/help/dashboards</a>
-              </div>
-              <div class="note-card">
-                <div class="note-label">Page layouts</div>
-                <a class="source-link" href="https://www.notion.com/help/layouts" target="_blank" rel="noreferrer">notion.com/help/layouts</a>
-              </div>
-              <div class="note-card">
-                <div class="note-label">Writing surface</div>
-                <a class="source-link" href="https://www.notion.com/help/writing-and-editing-basics" target="_blank" rel="noreferrer">notion.com/help/writing-and-editing-basics</a>
-              </div>
+            <div class="content">
+              <section class="section">
+                <div class="section-head">
+                  <div>
+                    <h2 class="section-title">Output cards</h2>
+                    <div class="section-note" id="genUpdatedNote">Not yet generated this session.</div>
+                  </div>
+                  <button class="button primary" id="genRun" data-testid="button-gen-run">Generate output</button>
+                </div>
+
+                <div class="output-grid">
+                  <div class="note-card">
+                    <div class="note-label">Operating brief</div>
+                    <div class="note-value" id="operatingBrief">—</div>
+                  </div>
+                  <div class="note-card">
+                    <div class="note-label">Primary risk</div>
+                    <div class="note-value" id="primaryRisk">—</div>
+                  </div>
+                  <div class="note-card">
+                    <div class="note-label">Next 30 days</div>
+                    <div class="note-value" id="nextThirty">—</div>
+                  </div>
+                </div>
+
+                <div class="two-col" style="margin-top:6px">
+                  <div class="card">
+                    <div class="block-label">Timeline view</div>
+                    <div class="timeline" id="timelineView"></div>
+                  </div>
+                  <div class="card">
+                    <div class="block-label">Study output</div>
+                    <div class="note-value" id="studyOutput">—</div>
+                  </div>
+                </div>
+              </section>
             </div>
           </section>
+
+          <!-- EXPORTS -->
+          <section class="view" id="view-exports" data-view="exports">
+            <div class="title-block">
+              <div class="page-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M12 3v12"/>
+                  <path d="M7 10l5 5 5-5"/>
+                  <path d="M5 21h14"/>
+                </svg>
+              </div>
+              <h1 class="page-title">Exports &amp; Import</h1>
+              <p class="page-subtitle">Preview the full workspace state as JSON, copy or download it, and restore from a previous export. The sandbox blocks local storage, so exporting is the only durable way to keep your work across sessions.</p>
+            </div>
+
+            <div class="content">
+              <section class="section">
+                <div class="section-head">
+                  <div>
+                    <h2 class="section-title">Workspace state</h2>
+                    <div class="section-note">Live JSON of everything you've entered, including tasks and milestones.</div>
+                  </div>
+                  <div class="database-tools">
+                    <button class="button small" id="exportCopy" data-testid="button-export-copy">Copy JSON</button>
+                    <button class="button small primary" id="exportDownload" data-testid="button-export-download">Download</button>
+                  </div>
+                </div>
+                <pre class="code-block" id="stateJson">{}</pre>
+              </section>
+
+              <section class="section">
+                <div class="section-head">
+                  <div>
+                    <h2 class="section-title">Restore from JSON</h2>
+                    <div class="section-note">Paste a previous export, or use the Import button in the top bar.</div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="form-grid">
+                    <div class="field">
+                      <label for="importArea">Paste JSON</label>
+                      <textarea id="importArea" data-testid="textarea-import" placeholder='{"mission": "..."}'></textarea>
+                    </div>
+                    <div class="database-tools" style="justify-content:flex-end">
+                      <button class="button" id="importClear" data-testid="button-import-clear">Clear</button>
+                      <button class="button primary" id="importApply" data-testid="button-import-apply">Restore</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="section">
+                <div class="section-head">
+                  <div>
+                    <h2 class="section-title">References</h2>
+                    <div class="section-note">Notion documentation that informed the layout and interaction model.</div>
+                  </div>
+                </div>
+                <div class="three-col">
+                  <div class="note-card">
+                    <div class="note-label">Dashboards</div>
+                    <a class="source-link" href="https://www.notion.com/help/dashboards" target="_blank" rel="noreferrer">notion.com/help/dashboards</a>
+                  </div>
+                  <div class="note-card">
+                    <div class="note-label">Page layouts</div>
+                    <a class="source-link" href="https://www.notion.com/help/layouts" target="_blank" rel="noreferrer">notion.com/help/layouts</a>
+                  </div>
+                  <div class="note-card">
+                    <div class="note-label">Writing surface</div>
+                    <a class="source-link" href="https://www.notion.com/help/writing-and-editing-basics" target="_blank" rel="noreferrer">notion.com/help/writing-and-editing-basics</a>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
+
         </div>
       </main>
 
       <aside class="details">
         <div class="detail-block">
-          <h3 class="detail-title">Details panel</h3>
-          <div class="stat-row"><span>Status</span><span class="mono" id="detailStatus">Drafting</span></div>
-          <div class="stat-row"><span>Last generated</span><span class="mono" id="detailGenerated">Not yet</span></div>
-          <div class="stat-row"><span>Horizon</span><span class="mono" id="detailHorizon">7Y</span></div>
-          <div class="stat-row"><span>Study hours</span><span class="mono" id="detailStudy">24h</span></div>
+          <h3 class="detail-title">Current page</h3>
+          <div class="stat-row"><span>View</span><span class="value mono" id="detailView">Dashboard</span></div>
+          <div class="stat-row"><span>Status</span><span class="value mono" id="detailStatus">Drafting</span></div>
+          <div class="stat-row"><span>Last generated</span><span class="value mono" id="detailGenerated">Not yet</span></div>
         </div>
 
         <div class="detail-block">
-          <div class="block-label">Quick metrics</div>
-          <div class="stat-row"><span>Focus ratio</span><span class="mono" id="focusRatio">70/20/10</span></div>
-          <div class="stat-row"><span>Execution mode</span><span class="mono" id="executionMode">Sustained</span></div>
-          <div class="stat-row"><span>Core frontier</span><span class="mono" id="coreFrontier">AI systems</span></div>
+          <div class="block-label">Workspace</div>
+          <div class="stat-row"><span>Profile</span><span class="value mono" id="detailProfile">Founder-operator</span></div>
+          <div class="stat-row"><span>Horizon</span><span class="value mono" id="detailHorizon">7Y</span></div>
+          <div class="stat-row"><span>Study hours</span><span class="value mono" id="detailStudy">24h</span></div>
+          <div class="stat-row"><span>Focus ratio</span><span class="value mono" id="focusRatio">70/20/10</span></div>
         </div>
 
         <div class="detail-block">
-          <div class="block-label">GitHub plan</div>
+          <div class="block-label">Core metrics</div>
+          <div class="stat-row"><span>Execution</span><span class="value mono" id="executionMode">Sustained</span></div>
+          <div class="stat-row"><span>Frontier</span><span class="value mono" id="coreFrontier">AI systems</span></div>
+          <div class="stat-row"><span>Open tasks</span><span class="value mono" id="detailOpenTasks">0</span></div>
+          <div class="stat-row"><span>Done tasks</span><span class="value mono" id="detailDoneTasks">0</span></div>
+        </div>
+
+        <div class="detail-block">
+          <div class="block-label">Navigation</div>
           <div class="source-stack">
-            <div class="source-link">GitHub is available through the CLI connector and can create a repository after confirmation.</div>
-            <div class="source-link">Default repo visibility will be private unless you explicitly want public.</div>
+            <div class="source-link">Use 1–6 to jump between pages. Hash routes keep links shareable.</div>
+            <div class="source-link">Press G to regenerate outputs from the current inputs.</div>
           </div>
         </div>
       </aside>
     </div>
 
-    <script>
-      const state = {
-        theme: 'light',
-        view: 'writer',
-      };
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-      const milestoneTemplates = {
+    <script>
+      'use strict';
+
+      // ---------- Defaults ----------
+      const MILESTONE_TEMPLATES = {
         3: [
           ['0-6 months', 'Sharpen the offer and publish proof of work', 'In progress', 'One paid wedge offer'],
           ['6-12 months', 'Create repeatable client or product demand', 'Next', 'One reliable acquisition loop'],
           ['12-24 months', 'Systemize delivery and retention', 'Next', 'Standard operating stack'],
-          ['24-36 months', 'Strengthen moat and retained earnings', 'Later', 'Runway and strategic optionality']
+          ['24-36 months', 'Strengthen moat and retained earnings', 'Later', 'Runway and strategic optionality'],
         ],
         7: [
           ['Year 1', 'Capability concentration and clear niche selection', 'In progress', 'Compelling public positioning'],
           ['Year 2', 'Turn projects into an offer architecture', 'Next', 'Flagship product or service'],
           ['Year 3-4', 'Build distribution and repeatable operating cadence', 'Next', 'Reliable inbound or outbound engine'],
           ['Year 5', 'Hire or partner selectively for leverage', 'Later', 'High-trust operator layer'],
-          ['Year 6-7', 'Retain earnings and choose long-duration bets', 'Later', 'Sovereign optionality']
+          ['Year 6-7', 'Retain earnings and choose long-duration bets', 'Later', 'Sovereign optionality'],
         ],
         12: [
           ['Years 1-2', 'Develop sharp craft and narrow positioning', 'In progress', 'Trusted reputation'],
           ['Years 3-4', 'Validate product demand and systemize shipping', 'Next', 'Repeatable offer stack'],
           ['Years 5-7', 'Compound distribution, network, and retained earnings', 'Next', 'Operational leverage'],
           ['Years 8-10', 'Build portfolio of durable intellectual and commercial assets', 'Later', 'Strategic moat'],
-          ['Years 11-12', 'Act as selective allocator of time, talent, and capital', 'Later', 'Long-horizon freedom']
-        ]
+          ['Years 11-12', 'Act as selective allocator of time, talent, and capital', 'Later', 'Long-horizon freedom'],
+        ],
       };
 
-      const els = {
-        missionInput: document.getElementById('missionInput'),
-        profileInput: document.getElementById('profileInput'),
-        horizonInput: document.getElementById('horizonInput'),
-        studyInput: document.getElementById('studyInput'),
-        thesisInput: document.getElementById('thesisInput'),
-        trackOne: document.getElementById('trackOne'),
-        trackTwo: document.getElementById('trackTwo'),
-        trackThree: document.getElementById('trackThree'),
-        constraintInput: document.getElementById('constraintInput'),
-        cadenceInput: document.getElementById('cadenceInput'),
-        energyInput: document.getElementById('energyInput'),
-        propertyMode: document.getElementById('propertyMode'),
-        propertyProfile: document.getElementById('propertyProfile'),
-        propertyHorizon: document.getElementById('propertyHorizon'),
-        propertyStudy: document.getElementById('propertyStudy'),
-        detailStatus: document.getElementById('detailStatus'),
-        detailGenerated: document.getElementById('detailGenerated'),
-        detailHorizon: document.getElementById('detailHorizon'),
-        detailStudy: document.getElementById('detailStudy'),
-        focusRatio: document.getElementById('focusRatio'),
-        executionMode: document.getElementById('executionMode'),
-        coreFrontier: document.getElementById('coreFrontier'),
-        studyCallout: document.getElementById('studyCallout'),
-        operatingBrief: document.getElementById('operatingBrief'),
-        primaryRisk: document.getElementById('primaryRisk'),
-        nextThirty: document.getElementById('nextThirty'),
-        timelineView: document.getElementById('timelineView'),
-        studyOutput: document.getElementById('studyOutput'),
-        milestoneTable: document.getElementById('milestoneTable'),
+      const DEFAULT_STATE = () => ({
+        mission: 'Build a compounding personal operating system that turns AI, writing, entrepreneurship, and disciplined study into long-term leverage. The goal is not just productivity. The goal is asymmetric capability, durable reputation, and selective capital freedom.',
+        profile: 'Founder-operator',
+        horizon: 7,
+        studyHours: 24,
+        thesis: 'Build a narrow AI-native product and knowledge business that compounds through distribution, premium insight, and reusable systems.',
+        tracks: ['AI systems', 'Writing', 'Sales and distribution'],
+        constraint: 'Too many interesting directions. Need sharper sequencing between learning, building, and selling.',
+        artifact: 'One essay + one working prototype',
+        cadence: 'Weekly + monthly',
+        energy: 'Sustainable intensity',
+        milestones: MILESTONE_TEMPLATES[7].map(r => r.slice()),
+        tasks: [
+          { id: taskId(), text: 'Publish one public essay tied to the venture thesis', track: 'Writing', done: false },
+          { id: taskId(), text: 'Prototype one reusable AI workflow end-to-end', track: 'AI systems', done: false },
+          { id: taskId(), text: 'Draft the flagship offer one-pager', track: 'Sales and distribution', done: false },
+        ],
+        theme: 'light',
+        generatedAt: null,
+        outputs: null,
+      });
+
+      function taskId() { return 't_' + Math.random().toString(36).slice(2, 9); }
+
+      // ---------- In-memory state ----------
+      const state = DEFAULT_STATE();
+      const STATUSES = ['In progress', 'Next', 'Later', 'Done', 'Blocked'];
+
+      // ---------- Element cache ----------
+      const els = {};
+      const $ = (id) => document.getElementById(id);
+      [
+        'missionInput','profileInput','horizonInput','studyInput','thesisInput',
+        'trackOne','trackTwo','trackThree','constraintInput','artifactInput','cadenceInput','energyInput',
+        'kpiProfile','kpiHorizon','kpiStudy','kpiTasks',
+        'tileFocus','tileMilestones','tileMilestonesSub','tileTaskProgress','tileTaskBar','tileGenerated',
+        'dashMission','dashAgenda','dashTimeline',
+        'milestoneTable','milestoneCount',
+        'studyCallout','studyBudget',
+        'taskInput','taskTrack','taskList','tasksHeading','tasksNote',
+        'operatingBrief','primaryRisk','nextThirty','timelineView','studyOutput','genUpdatedNote',
+        'stateJson','importArea',
+        'detailView','detailStatus','detailGenerated','detailProfile','detailHorizon','detailStudy',
+        'focusRatio','executionMode','coreFrontier','detailOpenTasks','detailDoneTasks',
+        'breadcrumbs','toast','sidebar','sidebarBackdrop',
+      ].forEach((id) => { els[id] = $(id); });
+
+      // ---------- Toast ----------
+      let toastTimer;
+      function toast(msg) {
+        els.toast.textContent = msg;
+        els.toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => els.toast.classList.remove('show'), 1800);
+      }
+
+      // ---------- Router ----------
+      const ROUTES = ['dashboard','planner','study','tasks','generator','exports'];
+      const ROUTE_TITLES = {
+        dashboard: 'Dashboard',
+        planner: 'Planner',
+        study: 'Study System',
+        tasks: 'Tasks',
+        generator: 'Generator',
+        exports: 'Exports',
       };
 
+      function currentRoute() {
+        const h = window.location.hash.replace(/^#\/?/, '').split('/')[0];
+        return ROUTES.includes(h) ? h : 'dashboard';
+      }
+
+      function navigate(route, opts = {}) {
+        if (!ROUTES.includes(route)) route = 'dashboard';
+        if (opts.replace) {
+          window.history.replaceState(null, '', '#/' + route);
+          applyRoute();
+        } else if (currentRoute() === route) {
+          applyRoute();
+        } else {
+          window.location.hash = '/' + route;
+        }
+        closeMobileNav();
+      }
+
+      function applyRoute() {
+        const route = currentRoute();
+        document.querySelectorAll('.view').forEach((v) => {
+          v.classList.toggle('active', v.dataset.view === route);
+        });
+        document.querySelectorAll('[data-route]').forEach((link) => {
+          link.classList.toggle('active', link.dataset.route === route);
+        });
+        const title = ROUTE_TITLES[route];
+        els.breadcrumbs.innerHTML = `Home / Life OS / <b>${title}</b>`;
+        els.detailView.textContent = title;
+        document.title = `${title} · Life OS Workspace`;
+        // Focus first input on planner/study/tasks for quick editing on mobile
+        window.scrollTo({ top: 0, behavior: 'instant' in window ? 'auto' : 'auto' });
+        // Re-render dynamic panels that depend on state
+        renderAll();
+      }
+
+      window.addEventListener('hashchange', applyRoute);
+
+      // ---------- Render ----------
       function statusClass(status) {
         if (status === 'In progress') return 'status-pill status-green';
         if (status === 'Next') return 'status-pill status-blue';
-        return 'status-pill status-amber';
+        if (status === 'Later') return 'status-pill status-amber';
+        if (status === 'Done') return 'status-pill status-neutral';
+        if (status === 'Blocked') return 'status-pill status-red';
+        return 'status-pill status-neutral';
       }
 
-      function getPayload() {
-        return {
-          mission: els.missionInput.value.trim(),
-          profile: els.profileInput.value,
-          horizon: Number(els.horizonInput.value),
-          studyHours: Number(els.studyInput.value || 0),
-          thesis: els.thesisInput.value.trim(),
-          tracks: [els.trackOne.value.trim(), els.trackTwo.value.trim(), els.trackThree.value.trim()].filter(Boolean),
-          constraint: els.constraintInput.value.trim(),
-          cadence: els.cadenceInput.value,
-          energy: els.energyInput.value,
-        };
+      function focusRatioFor(profile) {
+        if (profile === 'Builder') return '55/30/15';
+        if (profile === 'Scholar-founder') return '45/40/15';
+        return '70/20/10';
       }
 
-      function summarize(payload) {
-        const horizonText = `${payload.horizon} years`;
-        const focusRatio = payload.profile === 'Builder'
-          ? '55/30/15'
-          : payload.profile === 'Scholar-founder'
-            ? '45/40/15'
-            : '70/20/10';
-
-        const brief = `${payload.profile} mode. Over the next ${horizonText}, the system should convert ${payload.mission.toLowerCase()} into a practical operating sequence. The active venture thesis is: ${payload.thesis}`;
-        const risk = payload.constraint || 'Lack of sequencing between learning, building, and selling can turn ambition into drift.';
-        const nextThirty = `1. Protect ${Math.max(8, Math.round(payload.studyHours * 0.45))} hours for ${payload.tracks[0] || 'the primary frontier'}.
-2. Ship one concrete asset that expresses the venture thesis.
-3. End each week with a decision memo tied to the current bottleneck.`;
-        const study = `Primary track: ${payload.tracks[0] || 'AI systems'}.
-Secondary track: ${payload.tracks[1] || 'Writing'}.
-Tertiary track: ${payload.tracks[2] || 'Distribution'}.
-Cadence: ${payload.cadence}.
-Energy posture: ${payload.energy}.
-Rule: every study cycle ends in an artifact, not just more notes.`;
-
-        return { focusRatio, brief, risk, nextThirty, study };
+      function escapeHtml(s) {
+        return String(s ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
       }
 
-      function renderMilestones(payload) {
-        els.milestoneTable.innerHTML = milestoneTemplates[payload.horizon].map((row) => `
-          <tr>
-            <td>${row[0]}</td>
-            <td>${row[1]}</td>
-            <td><span class="${statusClass(row[2])}">${row[2]}</span></td>
-            <td>${row[3]}</td>
-          </tr>
-        `).join('');
-      }
+      function renderDashboard() {
+        const openCount = state.tasks.filter(t => !t.done).length;
+        const doneCount = state.tasks.filter(t => t.done).length;
+        const total = state.tasks.length;
+        const pct = total ? Math.round((doneCount / total) * 100) : 0;
 
-      function renderTimeline(payload) {
-        els.timelineView.innerHTML = milestoneTemplates[payload.horizon].map((row) => `
+        els.kpiProfile.textContent = state.profile;
+        els.kpiHorizon.textContent = `${state.horizon} years`;
+        els.kpiStudy.textContent = `${state.studyHours} hours`;
+        els.kpiTasks.textContent = `${openCount} open · ${doneCount} done`;
+
+        els.tileFocus.textContent = focusRatioFor(state.profile);
+        els.tileMilestones.textContent = String(state.milestones.length);
+        els.tileMilestonesSub.textContent = `${state.horizon}-year horizon`;
+        els.tileTaskProgress.textContent = `${pct}%`;
+        els.tileTaskBar.style.width = `${pct}%`;
+        els.tileGenerated.textContent = state.generatedAt
+          ? formatTime(state.generatedAt)
+          : 'Not yet';
+
+        els.dashMission.textContent = state.mission || 'Set a mission in the Planner.';
+
+        const openTasks = state.tasks.filter(t => !t.done).slice(0, 5);
+        if (!openTasks.length) {
+          els.dashAgenda.innerHTML = `<div class="agenda-empty">No open tasks. Add one on the Tasks page.</div>`;
+        } else {
+          els.dashAgenda.innerHTML = openTasks.map(t => `
+            <div class="agenda-item">
+              <span class="agenda-dot"></span>
+              <span style="flex:1;min-width:0;overflow-wrap:break-word">${escapeHtml(t.text)}</span>
+              <span class="task-track">${escapeHtml(t.track)}</span>
+            </div>
+          `).join('');
+        }
+
+        els.dashTimeline.innerHTML = state.milestones.slice(0, 6).map(row => `
           <div class="timeline-item">
-            <div class="timeline-phase">${row[0]}</div>
-            <div class="timeline-copy">${row[1]} → ${row[3]}</div>
+            <div class="timeline-phase">${escapeHtml(row[0])} · <span style="color:var(--text)">${escapeHtml(row[2])}</span></div>
+            <div class="timeline-copy">${escapeHtml(row[1])} → ${escapeHtml(row[3])}</div>
           </div>
         `).join('');
       }
 
-      function syncProperties(payload, summary) {
-        els.propertyMode.textContent = `${state.view[0].toUpperCase()}${state.view.slice(1)} view`;
-        els.propertyProfile.textContent = payload.profile;
-        els.propertyHorizon.textContent = `${payload.horizon} years`;
-        els.propertyStudy.textContent = `${payload.studyHours} hours`;
-        els.detailHorizon.textContent = `${payload.horizon}Y`;
-        els.detailStudy.textContent = `${payload.studyHours}h`;
-        els.focusRatio.textContent = summary.focusRatio;
-        els.executionMode.textContent = payload.energy;
-        els.coreFrontier.textContent = payload.tracks[0] || 'AI systems';
-        els.studyCallout.textContent = `The main study frontier is ${payload.tracks[0] || 'AI systems'}. With ${payload.studyHours} weekly hours and a ${payload.cadence.toLowerCase()} rhythm, the page should output one visible artifact per cycle.`;
+      function renderMilestoneTable() {
+        const rows = state.milestones;
+        els.milestoneCount.textContent = `${rows.length} milestone${rows.length === 1 ? '' : 's'}`;
+        els.milestoneTable.innerHTML = rows.map((row, i) => `
+          <tr data-row="${i}">
+            <td><input class="m-cell" data-col="0" value="${escapeHtml(row[0])}" data-testid="input-milestone-phase-${i}" /></td>
+            <td><input class="m-cell" data-col="1" value="${escapeHtml(row[1])}" data-testid="input-milestone-focus-${i}" /></td>
+            <td>
+              <select class="m-cell" data-col="2" data-testid="select-milestone-status-${i}">
+                ${STATUSES.map(s => `<option value="${s}"${s === row[2] ? ' selected' : ''}>${s}</option>`).join('')}
+              </select>
+            </td>
+            <td><input class="m-cell" data-col="3" value="${escapeHtml(row[3])}" data-testid="input-milestone-output-${i}" /></td>
+            <td><div class="row-actions"><button class="button small ghost m-del" data-testid="button-milestone-delete-${i}" aria-label="Delete row">✕</button></div></td>
+          </tr>
+        `).join('');
+
+        // Style table inputs inline
+        els.milestoneTable.querySelectorAll('input, select').forEach(inp => {
+          inp.style.width = '100%';
+          inp.style.border = '1px solid transparent';
+          inp.style.background = 'transparent';
+          inp.style.padding = '6px 8px';
+          inp.style.borderRadius = '6px';
+          inp.style.fontSize = '13px';
+          inp.style.color = 'var(--text)';
+          inp.addEventListener('focus', () => { inp.style.borderColor = 'var(--accent)'; inp.style.background = 'var(--panel)'; });
+          inp.addEventListener('blur', () => { inp.style.borderColor = 'transparent'; inp.style.background = 'transparent'; });
+        });
+
+        // Make status cell show color background too
+        els.milestoneTable.querySelectorAll('select[data-col="2"]').forEach(sel => {
+          const apply = () => {
+            sel.className = 'm-cell';
+            const cls = statusClass(sel.value).replace('status-pill ', '');
+            sel.classList.add(cls);
+            sel.style.fontSize = '11px';
+            sel.style.padding = '4px 8px';
+            sel.style.borderRadius = '999px';
+            sel.style.fontWeight = '500';
+          };
+          apply();
+          sel.addEventListener('change', apply);
+        });
+      }
+
+      function renderTaskTrackSelect() {
+        const tracks = state.tracks.filter(Boolean);
+        const current = els.taskTrack.value;
+        els.taskTrack.innerHTML = tracks.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('') + `<option value="General">General</option>`;
+        if (tracks.includes(current)) els.taskTrack.value = current;
+      }
+
+      let taskFilter = 'all';
+      function renderTasks() {
+        renderTaskTrackSelect();
+        let rows = state.tasks.slice().reverse();
+        if (taskFilter === 'open') rows = rows.filter(t => !t.done);
+        if (taskFilter === 'done') rows = rows.filter(t => t.done);
+
+        const openCount = state.tasks.filter(t => !t.done).length;
+        const doneCount = state.tasks.filter(t => t.done).length;
+        els.tasksHeading.textContent = taskFilter === 'done' ? 'Completed tasks'
+          : taskFilter === 'open' ? 'Open tasks' : 'All tasks';
+        els.tasksNote.textContent = `${openCount} open · ${doneCount} done · ${state.tasks.length} total`;
+        els.detailOpenTasks.textContent = String(openCount);
+        els.detailDoneTasks.textContent = String(doneCount);
+
+        if (!rows.length) {
+          els.taskList.innerHTML = `<div class="agenda-empty">${taskFilter === 'done' ? 'Nothing checked off yet.' : taskFilter === 'open' ? 'No open tasks. Nice.' : 'No tasks yet. Add one above.'}</div>`;
+          return;
+        }
+        els.taskList.innerHTML = rows.map(t => `
+          <div class="task ${t.done ? 'done' : ''}" data-id="${t.id}">
+            <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''} data-testid="checkbox-task-${t.id}" aria-label="Complete task" />
+            <span class="task-text">${escapeHtml(t.text)}</span>
+            <span class="task-track">${escapeHtml(t.track)}</span>
+            <button class="task-del" aria-label="Delete task" data-testid="button-task-delete-${t.id}">✕</button>
+          </div>
+        `).join('');
+      }
+
+      function renderStudyBudget() {
+        const total = Math.max(1, Number(state.studyHours) || 24);
+        const ratio = focusRatioFor(state.profile).split('/').map(n => Number(n));
+        const hours = ratio.map(r => Math.round((total * r) / 100));
+        const labels = ['Build', 'Learn', 'Distribute'];
+        els.studyBudget.innerHTML = hours.map((h, i) => `
+          <div class="tile">
+            <div class="tile-label">${labels[i]}</div>
+            <div class="tile-value">${h}h</div>
+            <div class="tile-sub">${ratio[i]}% of weekly hours</div>
+            <div class="tile-bar"><span style="width:${ratio[i]}%"></span></div>
+          </div>
+        `).join('');
+
+        els.studyCallout.innerHTML = `The main frontier is <strong>${escapeHtml(state.tracks[0] || 'AI systems')}</strong>. With <strong>${total} weekly hours</strong> and a ${escapeHtml(state.cadence.toLowerCase())} rhythm, each cycle should produce: <strong>${escapeHtml(state.artifact || 'one visible artifact')}</strong>.`;
+      }
+
+      function renderDetailPanel() {
+        els.detailProfile.textContent = state.profile;
+        els.detailHorizon.textContent = `${state.horizon}Y`;
+        els.detailStudy.textContent = `${state.studyHours}h`;
+        els.focusRatio.textContent = focusRatioFor(state.profile);
+        els.executionMode.textContent = state.energy;
+        els.coreFrontier.textContent = state.tracks[0] || '—';
+        els.detailGenerated.textContent = state.generatedAt ? formatTime(state.generatedAt) : 'Not yet';
+      }
+
+      function formatTime(ts) {
+        const d = new Date(ts);
+        return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+      }
+
+      function renderGenerator() {
+        if (!state.outputs) {
+          els.operatingBrief.textContent = '—';
+          els.primaryRisk.textContent = '—';
+          els.nextThirty.textContent = '—';
+          els.studyOutput.textContent = '—';
+          els.timelineView.innerHTML = `<div class="timeline-item"><div class="timeline-copy" style="color:var(--muted)">Click <strong>Generate</strong> to produce an operating brief, risk note, plan, and timeline.</div></div>`;
+          els.genUpdatedNote.textContent = 'Not yet generated this session.';
+          return;
+        }
+        const o = state.outputs;
+        els.operatingBrief.textContent = o.brief;
+        els.primaryRisk.textContent = o.risk;
+        els.nextThirty.textContent = o.nextThirty;
+        els.studyOutput.textContent = o.study;
+        els.timelineView.innerHTML = state.milestones.map(row => `
+          <div class="timeline-item">
+            <div class="timeline-phase">${escapeHtml(row[0])}</div>
+            <div class="timeline-copy">${escapeHtml(row[1])} → ${escapeHtml(row[3])}</div>
+          </div>
+        `).join('');
+        els.genUpdatedNote.textContent = `Last generated ${formatTime(state.generatedAt)}`;
+      }
+
+      function renderExports() {
+        const payload = exportPayload();
+        els.stateJson.textContent = JSON.stringify(payload, null, 2);
+      }
+
+      function renderAll() {
+        // Sync form inputs to state (one-way render)
+        els.missionInput.value = state.mission;
+        els.profileInput.value = state.profile;
+        els.horizonInput.value = String(state.horizon);
+        els.studyInput.value = state.studyHours;
+        els.thesisInput.value = state.thesis;
+        els.trackOne.value = state.tracks[0] || '';
+        els.trackTwo.value = state.tracks[1] || '';
+        els.trackThree.value = state.tracks[2] || '';
+        els.constraintInput.value = state.constraint;
+        els.artifactInput.value = state.artifact;
+        els.cadenceInput.value = state.cadence;
+        els.energyInput.value = state.energy;
+
+        renderDashboard();
+        renderMilestoneTable();
+        renderTasks();
+        renderStudyBudget();
+        renderDetailPanel();
+        renderGenerator();
+        renderExports();
+      }
+
+      // ---------- Generate ----------
+      function summarize() {
+        const p = state;
+        const horizonText = `${p.horizon} years`;
+        const brief = `${p.profile} mode. Over the next ${horizonText}, the system should convert the mission into a practical operating sequence. The active venture thesis is: ${p.thesis}`;
+        const risk = p.constraint || 'Lack of sequencing between learning, building, and selling can turn ambition into drift.';
+        const nextThirty = [
+          `1. Protect ${Math.max(8, Math.round((p.studyHours || 1) * 0.45))} hours for ${p.tracks[0] || 'the primary frontier'}.`,
+          `2. Ship one concrete asset that expresses the venture thesis.`,
+          `3. End each week with a decision memo tied to the current bottleneck.`,
+        ].join('\n');
+        const study = [
+          `Primary track: ${p.tracks[0] || 'AI systems'}.`,
+          `Secondary track: ${p.tracks[1] || 'Writing'}.`,
+          `Tertiary track: ${p.tracks[2] || 'Distribution'}.`,
+          `Cadence: ${p.cadence}.`,
+          `Energy posture: ${p.energy}.`,
+          `Cycle artifact: ${p.artifact || 'one visible artifact per cycle.'}`,
+        ].join('\n');
+        return { brief, risk, nextThirty, study };
       }
 
       function generate() {
-        const payload = getPayload();
-        const summary = summarize(payload);
-        els.operatingBrief.textContent = summary.brief;
-        els.primaryRisk.textContent = summary.risk;
-        els.nextThirty.textContent = summary.nextThirty;
-        els.studyOutput.textContent = summary.study;
-        renderMilestones(payload);
-        renderTimeline(payload);
-        syncProperties(payload, summary);
+        commitForms(); // pull current form values into state
+        state.outputs = summarize();
+        state.generatedAt = Date.now();
         els.detailStatus.textContent = 'Generated';
-        els.detailGenerated.textContent = new Date().toISOString().slice(0, 16).replace('T', ' ');
+        renderAll();
+        toast('Generated');
       }
 
-      function exportState() {
-        const payload = getPayload();
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      // ---------- Form <-> state commit ----------
+      function commitForms() {
+        state.mission = els.missionInput.value.trim();
+        state.profile = els.profileInput.value;
+        state.horizon = Number(els.horizonInput.value) || 7;
+        state.studyHours = Math.max(1, Math.min(80, Number(els.studyInput.value) || 0));
+        state.thesis = els.thesisInput.value.trim();
+        state.tracks = [els.trackOne.value.trim(), els.trackTwo.value.trim(), els.trackThree.value.trim()].filter(Boolean);
+        state.constraint = els.constraintInput.value.trim();
+        state.artifact = els.artifactInput.value.trim();
+        state.cadence = els.cadenceInput.value;
+        state.energy = els.energyInput.value;
+      }
+
+      // ---------- Export / Import ----------
+      function exportPayload() {
+        commitForms();
+        return {
+          mission: state.mission,
+          profile: state.profile,
+          horizon: state.horizon,
+          studyHours: state.studyHours,
+          thesis: state.thesis,
+          tracks: state.tracks,
+          constraint: state.constraint,
+          artifact: state.artifact,
+          cadence: state.cadence,
+          energy: state.energy,
+          milestones: state.milestones,
+          tasks: state.tasks,
+          generatedAt: state.generatedAt,
+          outputs: state.outputs,
+          theme: state.theme,
+        };
+      }
+
+      function downloadJson() {
+        const data = exportPayload();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'life-os-workspace.json';
+        a.download = `life-os-workspace-${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
         a.click();
+        a.remove();
         URL.revokeObjectURL(url);
+        toast('Exported JSON');
       }
 
-      function importState(file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const data = JSON.parse(reader.result);
-          els.missionInput.value = data.mission || '';
-          els.profileInput.value = data.profile || 'Founder-operator';
-          els.horizonInput.value = String(data.horizon || 7);
-          els.studyInput.value = data.studyHours || 24;
-          els.thesisInput.value = data.thesis || '';
-          els.trackOne.value = data.tracks?.[0] || 'AI systems';
-          els.trackTwo.value = data.tracks?.[1] || 'Writing';
-          els.trackThree.value = data.tracks?.[2] || 'Sales and distribution';
-          els.constraintInput.value = data.constraint || '';
-          els.cadenceInput.value = data.cadence || 'Weekly + monthly';
-          els.energyInput.value = data.energy || 'Sustainable intensity';
-          generate();
-        };
-        reader.readAsText(file);
+      async function copyJson() {
+        const txt = JSON.stringify(exportPayload(), null, 2);
+        try {
+          await navigator.clipboard.writeText(txt);
+          toast('Copied to clipboard');
+        } catch {
+          // Fallback
+          const ta = document.createElement('textarea');
+          ta.value = txt;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); toast('Copied'); } catch { toast('Copy failed'); }
+          ta.remove();
+        }
       }
 
-      document.getElementById('generateButton').addEventListener('click', generate);
-      document.getElementById('exportJson').addEventListener('click', exportState);
-      document.getElementById('importJson').addEventListener('change', (e) => {
-        if (e.target.files?.[0]) importState(e.target.files[0]);
-      });
-      document.getElementById('themeToggle').addEventListener('click', () => {
-        state.theme = state.theme === 'light' ? 'dark' : 'light';
+      function applyImport(raw) {
+        let data;
+        try {
+          data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        } catch (e) {
+          toast('Invalid JSON');
+          return false;
+        }
+        if (!data || typeof data !== 'object') { toast('Invalid JSON'); return false; }
+
+        if (typeof data.mission === 'string') state.mission = data.mission;
+        if (typeof data.profile === 'string') state.profile = data.profile;
+        if (data.horizon) state.horizon = Number(data.horizon) || 7;
+        if (data.studyHours) state.studyHours = Number(data.studyHours) || 24;
+        if (typeof data.thesis === 'string') state.thesis = data.thesis;
+        if (Array.isArray(data.tracks)) state.tracks = data.tracks.slice(0, 3).map(String);
+        if (typeof data.constraint === 'string') state.constraint = data.constraint;
+        if (typeof data.artifact === 'string') state.artifact = data.artifact;
+        if (typeof data.cadence === 'string') state.cadence = data.cadence;
+        if (typeof data.energy === 'string') state.energy = data.energy;
+        if (Array.isArray(data.milestones)) {
+          state.milestones = data.milestones
+            .filter(r => Array.isArray(r) && r.length >= 4)
+            .map(r => [String(r[0]||''), String(r[1]||''), String(r[2]||'Next'), String(r[3]||'')]);
+        }
+        if (Array.isArray(data.tasks)) {
+          state.tasks = data.tasks
+            .filter(t => t && typeof t === 'object')
+            .map(t => ({ id: t.id || taskId(), text: String(t.text||''), track: String(t.track||'General'), done: !!t.done }))
+            .filter(t => t.text);
+        }
+        if (data.generatedAt) state.generatedAt = Number(data.generatedAt);
+        if (data.outputs && typeof data.outputs === 'object') state.outputs = data.outputs;
+        if (data.theme === 'dark' || data.theme === 'light') {
+          state.theme = data.theme;
+          document.documentElement.setAttribute('data-theme', state.theme);
+        }
+        renderAll();
+        toast('Imported');
+        return true;
+      }
+
+      // ---------- Event wiring ----------
+      function wireEvents() {
+        // Nav links (sidebar + inline buttons)
+        document.querySelectorAll('[data-route]').forEach((link) => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigate(link.dataset.route);
+          });
+        });
+        document.querySelectorAll('[data-route-link]').forEach((btn) => {
+          btn.addEventListener('click', () => navigate(btn.dataset.routeLink));
+        });
+
+        // Topbar actions
+        $('themeToggle').addEventListener('click', () => {
+          state.theme = state.theme === 'light' ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', state.theme);
+        });
+        $('generateButton').addEventListener('click', generate);
+        $('exportJson').addEventListener('click', downloadJson);
+        $('importJson').addEventListener('change', (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          const reader = new FileReader();
+          reader.onload = () => applyImport(reader.result);
+          reader.readAsText(f);
+          e.target.value = '';
+        });
+
+        // Sidebar quick actions
+        $('sidebarGenerate').addEventListener('click', generate);
+        $('sidebarReset').addEventListener('click', () => {
+          if (!confirm('Reset everything to defaults? Unsaved edits will be lost.')) return;
+          const d = DEFAULT_STATE();
+          Object.assign(state, d);
+          state.milestones = d.milestones;
+          state.tasks = d.tasks;
+          state.outputs = null;
+          state.generatedAt = null;
+          document.documentElement.setAttribute('data-theme', state.theme);
+          renderAll();
+          toast('Reset');
+        });
+
+        // Generator
+        $('genRun').addEventListener('click', generate);
+
+        // Planner form inputs
+        ['missionInput','profileInput','horizonInput','studyInput','thesisInput',
+         'trackOne','trackTwo','trackThree','constraintInput','artifactInput','cadenceInput','energyInput']
+          .forEach((id) => {
+            els[id].addEventListener('input', () => {
+              els.detailStatus.textContent = 'Editing';
+              commitForms();
+              // Live-update downstream views (lightweight re-render)
+              renderStudyBudget();
+              renderDetailPanel();
+              renderDashboard();
+              renderExports();
+              renderTaskTrackSelect();
+            });
+            els[id].addEventListener('change', () => {
+              commitForms();
+              renderAll();
+            });
+          });
+
+        // Horizon change: if milestones still match default template, reset them
+        els.horizonInput.addEventListener('change', () => {
+          const currentHorizon = Number(els.horizonInput.value);
+          const tpl = MILESTONE_TEMPLATES[currentHorizon];
+          if (tpl) {
+            // If user hasn't customized away from any known template, swap to the new one
+            const isKnown = Object.values(MILESTONE_TEMPLATES).some(t => JSON.stringify(t) === JSON.stringify(state.milestones));
+            if (isKnown) {
+              state.milestones = tpl.map(r => r.slice());
+              renderAll();
+            }
+          }
+        });
+
+        // Milestone table interactions
+        els.milestoneTable.addEventListener('input', (e) => {
+          const inp = e.target.closest('.m-cell');
+          if (!inp) return;
+          const tr = inp.closest('tr');
+          const i = Number(tr.dataset.row);
+          const col = Number(inp.dataset.col);
+          state.milestones[i][col] = inp.value;
+          renderDashboard();
+          renderExports();
+        });
+        els.milestoneTable.addEventListener('change', (e) => {
+          if (e.target.matches('select.m-cell')) {
+            const tr = e.target.closest('tr');
+            const i = Number(tr.dataset.row);
+            state.milestones[i][2] = e.target.value;
+            renderDashboard();
+            renderExports();
+          }
+        });
+        els.milestoneTable.addEventListener('click', (e) => {
+          const btn = e.target.closest('.m-del');
+          if (!btn) return;
+          const tr = btn.closest('tr');
+          const i = Number(tr.dataset.row);
+          state.milestones.splice(i, 1);
+          renderMilestoneTable();
+          renderDashboard();
+          renderExports();
+        });
+
+        $('milestoneAdd').addEventListener('click', () => {
+          state.milestones.push(['New phase', 'New focus', 'Next', 'Expected output']);
+          renderMilestoneTable();
+          renderDashboard();
+          renderExports();
+          toast('Row added');
+        });
+        $('milestoneReset').addEventListener('click', () => {
+          const tpl = MILESTONE_TEMPLATES[state.horizon];
+          if (!tpl) return;
+          if (!confirm('Reset milestones to the template for this horizon?')) return;
+          state.milestones = tpl.map(r => r.slice());
+          renderAll();
+          toast('Reset milestones');
+        });
+
+        // Tasks
+        $('taskAdd').addEventListener('click', addTask);
+        els.taskInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTask(); });
+        els.taskList.addEventListener('click', (e) => {
+          const taskEl = e.target.closest('.task');
+          if (!taskEl) return;
+          const id = taskEl.dataset.id;
+          if (e.target.matches('.task-check')) {
+            const t = state.tasks.find(t => t.id === id);
+            if (t) { t.done = e.target.checked; renderTasks(); renderDashboard(); renderDetailPanel(); renderExports(); }
+          } else if (e.target.closest('.task-del')) {
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            renderTasks(); renderDashboard(); renderDetailPanel(); renderExports();
+          }
+        });
+        document.querySelectorAll('[data-filter]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            taskFilter = btn.dataset.filter;
+            document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('active', b === btn));
+            renderTasks();
+          });
+        });
+
+        // Exports page
+        $('exportCopy').addEventListener('click', copyJson);
+        $('exportDownload').addEventListener('click', downloadJson);
+        $('importApply').addEventListener('click', () => {
+          const ok = applyImport(els.importArea.value);
+          if (ok) els.importArea.value = '';
+        });
+        $('importClear').addEventListener('click', () => { els.importArea.value = ''; });
+
+        // Mobile nav
+        $('mobileNavToggle').addEventListener('click', openMobileNav);
+        els.sidebarBackdrop.addEventListener('click', closeMobileNav);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+          const tag = (e.target && e.target.tagName || '').toLowerCase();
+          if (['input','textarea','select'].includes(tag) || e.target.isContentEditable) return;
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
+          if (e.key >= '1' && e.key <= '6') {
+            const idx = Number(e.key) - 1;
+            navigate(ROUTES[idx]);
+            e.preventDefault();
+          } else if (e.key.toLowerCase() === 'g') {
+            generate();
+            e.preventDefault();
+          } else if (e.key.toLowerCase() === 't') {
+            $('themeToggle').click();
+          }
+        });
+      }
+
+      function addTask() {
+        const text = els.taskInput.value.trim();
+        if (!text) { toast('Task text required'); return; }
+        const track = els.taskTrack.value || 'General';
+        state.tasks.push({ id: taskId(), text, track, done: false });
+        els.taskInput.value = '';
+        renderTasks();
+        renderDashboard();
+        renderDetailPanel();
+        renderExports();
+        toast('Task added');
+      }
+
+      function openMobileNav() {
+        els.sidebar.classList.add('open');
+        els.sidebarBackdrop.classList.add('open');
+      }
+      function closeMobileNav() {
+        els.sidebar.classList.remove('open');
+        els.sidebarBackdrop.classList.remove('open');
+      }
+
+      // ---------- Init ----------
+      function init() {
         document.documentElement.setAttribute('data-theme', state.theme);
-      });
+        wireEvents();
+        // Ensure we have a valid hash route so deploy/refresh works
+        if (!ROUTES.includes(currentRoute())) {
+          window.history.replaceState(null, '', '#/dashboard');
+        }
+        applyRoute();
+      }
 
-      document.querySelectorAll('[data-view]').forEach((button) => {
-        button.addEventListener('click', () => {
-          state.view = button.dataset.view;
-          document.querySelectorAll('[data-view]').forEach((b) => b.classList.toggle('active', b === button));
-          els.detailStatus.textContent = 'Drafting';
-          els.propertyMode.textContent = `${state.view[0].toUpperCase()}${state.view.slice(1)} view`;
-        });
-      });
-
-      document.querySelectorAll('input, textarea, select').forEach((el) => {
-        el.addEventListener('input', () => {
-          els.detailStatus.textContent = 'Editing';
-        });
-      });
-
-      generate();
+      init();
     </script>
   </body>
 </html>

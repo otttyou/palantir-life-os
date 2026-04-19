@@ -1,6 +1,25 @@
-QA inventory
-- Claims: Palantir-inspired monochrome dashboard language, interactive profile switching, horizon switching, intensity adjustment, visualizations for ontology, venture plan, study plan, capability surface, responsive desktop/mobile layout, theme switch.
-- Controls: theme toggle, jump button, profile buttons, horizon buttons, intensity slider, section nav links.
-- State changes: dark/light mode, founder/builder/scholar profile changes, 3Y/7Y/12Y venture timeline changes, intensity-driven decision metrics change, anchor navigation highlights.
-- Visual checks: hero readability, no text clipping, bento card consistency, sidebar fit, charts visible and aligned, footer source links legible.
-- Exploratory scenarios: rapid profile switching; mobile viewport with horizon changes and theme toggle.
+# QA Inventory — Life OS full-function upgrade
+
+## User-visible claims to verify
+- Six-page hash-routed navigation works across Dashboard, Planner, Study, Tasks, Generator, and Exports.
+- Planner, Study, and Tasks inputs update shared outputs across Dashboard, Details, Generator, and Exports.
+- Generator refreshes operating outputs and timestamps.
+- JSON export and restore work for persistence in the sandbox.
+- Keyboard shortcuts 1–6, G, and T work.
+- Mobile layout uses a slide-in sidebar without horizontal overflow.
+
+## Controls and expected state changes
+- Sidebar nav links and route-link buttons change the active page and breadcrumbs.
+- Planner form fields change KPI tiles, details panel, and JSON preview.
+- Milestone table add/delete/edit changes milestone count, dashboard timeline, and exports.
+- Study inputs change weekly budget and detail values.
+- Task add/toggle/delete/filter changes task list, dashboard agenda, and progress tiles.
+- Generator buttons update output cards and last-generated timestamps.
+- Export copy/download and restore textarea/file input affect JSON persistence flow.
+- Theme toggle and keyboard shortcut T switch appearance.
+- Keyboard shortcuts 1–6 change pages; G regenerates outputs.
+- Mobile nav toggle and backdrop open/close the sidebar.
+
+## Exploratory checks
+- Custom milestone edits should survive horizon changes unless still on a default template.
+- Empty/invalid import payload should not silently corrupt state.
