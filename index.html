@@ -1716,7 +1716,12 @@
       function updateFoldButtonState() {
         const route = currentRoute();
         const sections = Array.from(document.querySelectorAll(`.view[data-view="${route}"] .section[data-fold-key]`));
-        if (!sections.length) return;
+        if (!sections.length) {
+          els.foldSections.textContent = 'Fold';
+          els.foldSections.disabled = true;
+          return;
+        }
+        els.foldSections.disabled = false;
         const expandedExists = sections.some((s) => !s.classList.contains('collapsed'));
         els.foldSections.textContent = expandedExists ? 'Fold' : 'Unfold';
       }

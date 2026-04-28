@@ -15,12 +15,14 @@ Client-side routing via URL hash (`#/dashboard`, `#/planner`, ...) — safe for 
 
 ## Shared state
 
-All pages read and write a single in-memory state object. The sandbox blocks `localStorage`, `sessionStorage`, and cookies, so persistence happens through JSON export/import instead.
+All pages read and write a single in-memory state object.
 
-Additionally, the app now attempts lightweight session persistence automatically:
+Additionally, the app attempts lightweight session persistence automatically:
 - Uses `localStorage` when available.
 - Falls back to `window.name` in locked-down environments.
 - Restores the previous session snapshot on reload when possible.
+
+When persistent browser storage is unavailable, JSON export/import remains the reliable manual backup path.
 
 - Editing any field in Planner/Study immediately updates the Dashboard tiles, Study budget, Details panel, and Exports JSON preview.
 - Changing **Horizon** in Planner swaps the milestone table to the matching 3/7/12-year template only when the table is still at a known template, so custom edits are preserved.
