@@ -1322,6 +1322,7 @@
                     <button class="view-chip active" data-filter="all" data-testid="button-filter-all">All</button>
                     <button class="view-chip" data-filter="open" data-testid="button-filter-open">Open</button>
                     <button class="view-chip" data-filter="done" data-testid="button-filter-done">Done</button>
+                    <button class="view-chip" id="taskClearDone" data-testid="button-clear-done">Clear done</button>
                   </div>
                 </div>
                 <div class="task-list" id="taskList"></div>
@@ -1548,6 +1549,9 @@
       // ---------- In-memory state ----------
       const state = DEFAULT_STATE();
       const STATUSES = ['In progress', 'Next', 'Later', 'Done', 'Blocked'];
+      const SNAPSHOT_KEY = 'life-os-workspace-v1';
+      const SNAPSHOT_PREFIX = '__life_os__=';
+      let persistTimer;
 
       // ---------- Element cache ----------
       const els = {};
@@ -1560,7 +1564,7 @@
         'dashMission','dashAgenda','dashTimeline',
         'milestoneTable','milestoneCount',
         'studyCallout','studyBudget',
-        'taskInput','taskTrack','taskList','tasksHeading','tasksNote',
+        'taskInput','taskTrack','taskList','tasksHeading','tasksNote','taskClearDone',
         'operatingBrief','primaryRisk','nextThirty','timelineView','studyOutput','genUpdatedNote',
         'stateJson','importArea',
         'detailView','detailStatus','detailGenerated','detailProfile','detailHorizon','detailStudy',
@@ -1575,6 +1579,34 @@
         els.toast.classList.add('show');
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => els.toast.classList.remove('show'), 1800);
+      }
+
+      function persistState() {
+        const payload = JSON.stringify(exportPayload());
+        try {
+          window.localStorage.setItem(SNAPSHOT_KEY, payload);
+          return;
+        } catch {}
+        // Fallback for locked-down browser contexts: survives refresh in same tab.
+        window.name = `${SNAPSHOT_PREFIX}${payload}`;
+      }
+
+      function schedulePersist() {
+        clearTimeout(persistTimer);
+        persistTimer = setTimeout(persistState, 120);
+      }
+
+      function restorePersistedState() {
+        let snapshot = null;
+        try {
+          snapshot = window.localStorage.getItem(SNAPSHOT_KEY);
+        } catch {}
+        if (!snapshot && window.name.startsWith(SNAPSHOT_PREFIX)) {
+          snapshot = window.name.slice(SNAPSHOT_PREFIX.length);
+        }
+        if (!snapshot) return;
+        const ok = applyImport(snapshot, { silent: true });
+        if (ok) toast('Restored previous session');
       }
 
       // ---------- Router ----------
@@ -1890,6 +1922,7 @@
         els.detailStatus.textContent = 'Generated';
         renderAll();
         toast('Generated');
+        schedulePersist();
       }
 
       // ---------- Form <-> state commit ----------
@@ -1958,15 +1991,18 @@
         }
       }
 
-      function applyImport(raw) {
+      function applyImport(raw, opts = {}) {
         let data;
         try {
           data = typeof raw === 'string' ? JSON.parse(raw) : raw;
         } catch (e) {
-          toast('Invalid JSON');
+          if (!opts.silent) toast('Invalid JSON');
           return false;
         }
-        if (!data || typeof data !== 'object') { toast('Invalid JSON'); return false; }
+        if (!data || typeof data !== 'object') {
+          if (!opts.silent) toast('Invalid JSON');
+          return false;
+        }
 
         if (typeof data.mission === 'string') state.mission = data.mission;
         if (typeof data.profile === 'string') state.profile = data.profile;
@@ -1996,7 +2032,8 @@
           document.documentElement.setAttribute('data-theme', state.theme);
         }
         renderAll();
-        toast('Imported');
+        if (!opts.silent) schedulePersist();
+        if (!opts.silent) toast('Imported');
         return true;
       }
 
@@ -2017,6 +2054,7 @@
         $('themeToggle').addEventListener('click', () => {
           state.theme = state.theme === 'light' ? 'dark' : 'light';
           document.documentElement.setAttribute('data-theme', state.theme);
+          schedulePersist();
         });
         $('generateButton').addEventListener('click', generate);
         $('exportJson').addEventListener('click', downloadJson);
@@ -2042,6 +2080,7 @@
           document.documentElement.setAttribute('data-theme', state.theme);
           renderAll();
           toast('Reset');
+          schedulePersist();
         });
 
         // Generator
@@ -2060,10 +2099,12 @@
               renderDashboard();
               renderExports();
               renderTaskTrackSelect();
+              schedulePersist();
             });
             els[id].addEventListener('change', () => {
               commitForms();
               renderAll();
+              schedulePersist();
             });
           });
 
@@ -2077,6 +2118,7 @@
             if (isKnown) {
               state.milestones = tpl.map(r => r.slice());
               renderAll();
+              schedulePersist();
             }
           }
         });
@@ -2091,6 +2133,7 @@
           state.milestones[i][col] = inp.value;
           renderDashboard();
           renderExports();
+          schedulePersist();
         });
         els.milestoneTable.addEventListener('change', (e) => {
           if (e.target.matches('select.m-cell')) {
@@ -2099,6 +2142,7 @@
             state.milestones[i][2] = e.target.value;
             renderDashboard();
             renderExports();
+            schedulePersist();
           }
         });
         els.milestoneTable.addEventListener('click', (e) => {
@@ -2110,6 +2154,7 @@
           renderMilestoneTable();
           renderDashboard();
           renderExports();
+          schedulePersist();
         });
 
         $('milestoneAdd').addEventListener('click', () => {
@@ -2118,6 +2163,7 @@
           renderDashboard();
           renderExports();
           toast('Row added');
+          schedulePersist();
         });
         $('milestoneReset').addEventListener('click', () => {
           const tpl = MILESTONE_TEMPLATES[state.horizon];
@@ -2126,6 +2172,7 @@
           state.milestones = tpl.map(r => r.slice());
           renderAll();
           toast('Reset milestones');
+          schedulePersist();
         });
 
         // Tasks
@@ -2137,11 +2184,24 @@
           const id = taskEl.dataset.id;
           if (e.target.matches('.task-check')) {
             const t = state.tasks.find(t => t.id === id);
-            if (t) { t.done = e.target.checked; renderTasks(); renderDashboard(); renderDetailPanel(); renderExports(); }
+            if (t) {
+              t.done = e.target.checked;
+              renderTasks(); renderDashboard(); renderDetailPanel(); renderExports();
+              schedulePersist();
+            }
           } else if (e.target.closest('.task-del')) {
             state.tasks = state.tasks.filter(t => t.id !== id);
             renderTasks(); renderDashboard(); renderDetailPanel(); renderExports();
+            schedulePersist();
           }
+        });
+        els.taskClearDone.addEventListener('click', () => {
+          const before = state.tasks.length;
+          state.tasks = state.tasks.filter((t) => !t.done);
+          const removed = before - state.tasks.length;
+          renderTasks(); renderDashboard(); renderDetailPanel(); renderExports();
+          toast(removed ? `Cleared ${removed} done task${removed === 1 ? '' : 's'}` : 'No completed tasks to clear');
+          schedulePersist();
         });
         document.querySelectorAll('[data-filter]').forEach((btn) => {
           btn.addEventListener('click', () => {
@@ -2157,6 +2217,7 @@
         $('importApply').addEventListener('click', () => {
           const ok = applyImport(els.importArea.value);
           if (ok) els.importArea.value = '';
+          if (ok) schedulePersist();
         });
         $('importClear').addEventListener('click', () => { els.importArea.value = ''; });
 
@@ -2193,6 +2254,7 @@
         renderDetailPanel();
         renderExports();
         toast('Task added');
+        schedulePersist();
       }
 
       function openMobileNav() {
@@ -2208,6 +2270,7 @@
       function init() {
         document.documentElement.setAttribute('data-theme', state.theme);
         wireEvents();
+        restorePersistedState();
         // Ensure we have a valid hash route so deploy/refresh works
         if (!ROUTES.includes(currentRoute())) {
           window.history.replaceState(null, '', '#/dashboard');

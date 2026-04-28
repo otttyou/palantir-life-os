@@ -9,13 +9,18 @@ Client-side routing via URL hash (`#/dashboard`, `#/planner`, ...) — safe for 
 - **Dashboard** (`#/dashboard`) — KPI tiles, mission, agenda of open tasks, horizon timeline.
 - **Planner** (`#/planner`) — Mission editor, page properties (profile, horizon, study hours, venture thesis), fully editable milestone table (add/delete rows, inline edits, status dropdown).
 - **Study** (`#/study`) — Three study tracks, constraints, cadence, energy posture, and a derived weekly-budget split (Build · Learn · Distribute) that updates live.
-- **Tasks** (`#/tasks`) — Add/check/delete tasks bound to study tracks; All / Open / Done filters; progress flows to the Dashboard tile.
+- **Tasks** (`#/tasks`) — Add/check/delete tasks bound to study tracks; All / Open / Done filters plus **Clear done** cleanup; progress flows to the Dashboard tile.
 - **Generator** (`#/generator`) — Produces an operating brief, primary risk, 30-day plan, timeline, and study output from the current inputs.
 - **Exports** (`#/exports`) — Live JSON preview of all state; Copy, Download, and paste-to-restore import.
 
 ## Shared state
 
 All pages read and write a single in-memory state object. The sandbox blocks `localStorage`, `sessionStorage`, and cookies, so persistence happens through JSON export/import instead.
+
+Additionally, the app now attempts lightweight session persistence automatically:
+- Uses `localStorage` when available.
+- Falls back to `window.name` in locked-down environments.
+- Restores the previous session snapshot on reload when possible.
 
 - Editing any field in Planner/Study immediately updates the Dashboard tiles, Study budget, Details panel, and Exports JSON preview.
 - Changing **Horizon** in Planner swaps the milestone table to the matching 3/7/12-year template only when the table is still at a known template, so custom edits are preserved.
@@ -52,4 +57,3 @@ All pages read and write a single in-memory state object. The sandbox blocks `lo
 ## Run locally
 
 Open `index.html` directly in a browser, or serve the folder with any static server. No build step.
-
