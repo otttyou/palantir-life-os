@@ -1683,74 +1683,7 @@
         const ok = applyImport(snapshot, { silent: true });
         if (ok) toast('Restored previous session');
       }
-
-      const collapsedSections = new Set();
-
-      function applyZenMode() {
-        document.body.classList.toggle('zen-mode', !!state.zenMode);
-        if (els.zenToggle) els.zenToggle.textContent = state.zenMode ? 'Full UI' : 'Zen';
-      }
-
-      function sectionKey(route, idx) {
-        return `${route}:${idx}`;
-      }
-
-      function setSectionCollapsed(section, collapsed) {
-        section.classList.toggle('collapsed', collapsed);
-        const btn = section.querySelector('.section-fold');
-        if (btn) btn.textContent = collapsed ? 'Unfold' : 'Fold';
-      }
-
-      function applySectionFolds() {
-        document.querySelectorAll('.view').forEach((view) => {
-          const route = view.dataset.view;
-          view.querySelectorAll(':scope > .content > .section, :scope > .section').forEach((section, idx) => {
-            const key = section.dataset.foldKey || sectionKey(route, idx);
-            section.dataset.foldKey = key;
-            setSectionCollapsed(section, collapsedSections.has(key));
-          });
-        });
-        updateFoldButtonState();
-      }
-
-      function updateFoldButtonState() {
-        const route = currentRoute();
-        const sections = Array.from(document.querySelectorAll(`.view[data-view="${route}"] .section[data-fold-key]`));
-        if (!sections.length) {
-          els.foldSections.textContent = 'Fold';
-          els.foldSections.disabled = true;
-          return;
-        }
-        els.foldSections.disabled = false;
-        const expandedExists = sections.some((s) => !s.classList.contains('collapsed'));
-        els.foldSections.textContent = expandedExists ? 'Fold' : 'Unfold';
-      }
-
-      function initSectionFolds() {
-        document.querySelectorAll('.view').forEach((view) => {
-          const route = view.dataset.view;
-          view.querySelectorAll(':scope > .content > .section, :scope > .section').forEach((section, idx) => {
-            section.dataset.foldKey = sectionKey(route, idx);
-            const head = section.querySelector('.section-head');
-            if (!head || head.querySelector('.section-fold')) return;
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'button small section-fold';
-            btn.textContent = 'Fold';
-            btn.addEventListener('click', () => {
-              const key = section.dataset.foldKey;
-              if (section.classList.contains('collapsed')) collapsedSections.delete(key);
-              else collapsedSections.add(key);
-              setSectionCollapsed(section, collapsedSections.has(key));
-              state.foldedSections = Array.from(collapsedSections);
-              schedulePersist();
-              updateFoldButtonState();
-            });
-            head.appendChild(btn);
-          });
-        });
-      }
-
+      
       // ---------- Router ----------
       const ROUTES = ['dashboard','planner','study','tasks','generator','exports'];
       const ROUTE_TITLES = {
@@ -2450,10 +2383,7 @@
         initSectionFolds();
         wireEvents();
         restorePersistedState();
-        if (Array.isArray(state.foldedSections)) {
-          state.foldedSections.map(String).forEach((k) => collapsedSections.add(k));
-        }
-        applyZenMode();
+
         // Ensure we have a valid hash route so deploy/refresh works
         if (!ROUTES.includes(currentRoute())) {
           window.history.replaceState(null, '', '#/dashboard');

@@ -24,6 +24,11 @@ Additionally, the app attempts lightweight session persistence automatically:
 
 When persistent browser storage is unavailable, JSON export/import remains the reliable manual backup path.
 
+Additionally, the app now attempts lightweight session persistence automatically:
+- Uses `localStorage` when available.
+- Falls back to `window.name` in locked-down environments.
+- Restores the previous session snapshot on reload when possible.
+
 - Editing any field in Planner/Study immediately updates the Dashboard tiles, Study budget, Details panel, and Exports JSON preview.
 - Changing **Horizon** in Planner swaps the milestone table to the matching 3/7/12-year template only when the table is still at a known template, so custom edits are preserved.
 - `Generate` in the topbar or on the Generator page refreshes output cards and stamps a timestamp.
