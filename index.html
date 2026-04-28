@@ -402,6 +402,15 @@
         gap: 12px;
         flex-wrap: wrap;
       }
+      .section-fold {
+        margin-left: auto;
+      }
+      .section.collapsed {
+        gap: 0;
+      }
+      .section.collapsed > :not(.section-head) {
+        display: none;
+      }
       .section-title {
         margin: 0;
         font-size: 18px;
@@ -864,6 +873,36 @@
         transform: translateX(-50%) translateY(0);
       }
 
+      body.zen-mode .workspace {
+        grid-template-columns: 84px minmax(0, 1fr);
+      }
+      body.zen-mode .details {
+        display: none;
+      }
+      body.zen-mode .brand-copy,
+      body.zen-mode .sidebar .block-label,
+      body.zen-mode .sidebar .source-link,
+      body.zen-mode .sidebar .quick-stack,
+      body.zen-mode .sidebar .nav-kbd {
+        display: none;
+      }
+      body.zen-mode .sidebar {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+      body.zen-mode .nav-link {
+        justify-content: center;
+      }
+      body.zen-mode .nav-label {
+        justify-content: center;
+        font-size: 0;
+        gap: 0;
+      }
+      body.zen-mode .nav-icon {
+        width: 18px;
+        height: 18px;
+      }
+
       /* Responsive */
       @media (max-width: 1200px) {
         .workspace { grid-template-columns: 240px minmax(0, 1fr); }
@@ -1017,6 +1056,8 @@
               <div class="breadcrumbs" id="breadcrumbs">Home / Life OS / <b>Dashboard</b></div>
             </div>
             <div class="top-actions">
+              <button class="button" id="zenToggle" data-testid="button-zen-toggle" aria-label="Toggle minimalist mode">Zen</button>
+              <button class="button" id="foldSections" data-testid="button-fold-sections" aria-label="Fold or unfold sections">Fold</button>
               <button class="button" id="themeToggle" data-testid="button-theme-toggle" aria-label="Toggle theme">Theme</button>
               <button class="button primary" id="generateButton" data-testid="button-generate-output">Generate</button>
               <button class="button" id="exportJson" data-testid="button-export-json">Export</button>
@@ -1572,6 +1613,8 @@
           { id: taskId(), text: 'Draft the flagship offer one-pager', track: 'Sales and distribution', done: false },
         ],
         theme: 'light',
+        zenMode: false,
+        foldedSections: [],
         generatedAt: null,
         outputs: null,
       });
@@ -1601,7 +1644,7 @@
         'stateJson','importArea',
         'detailView','detailStatus','detailGenerated','detailProfile','detailHorizon','detailStudy',
         'focusRatio','executionMode','coreFrontier','detailOpenTasks','detailDoneTasks',
-        'breadcrumbs','toast','sidebar','sidebarBackdrop',
+        'breadcrumbs','toast','sidebar','sidebarBackdrop','zenToggle','foldSections',
       ].forEach((id) => { els[id] = $(id); });
 
       // ---------- Toast ----------
@@ -1640,7 +1683,7 @@
         const ok = applyImport(snapshot, { silent: true });
         if (ok) toast('Restored previous session');
       }
-
+      
       // ---------- Router ----------
       const ROUTES = ['dashboard','planner','study','tasks','generator','exports'];
       const ROUTE_TITLES = {
@@ -1686,6 +1729,7 @@
         window.scrollTo({ top: 0, behavior: 'instant' in window ? 'auto' : 'auto' });
         // Re-render dynamic panels that depend on state
         renderAll();
+        updateFoldButtonState();
       }
 
       window.addEventListener('hashchange', applyRoute);
@@ -1923,6 +1967,8 @@
         renderDetailPanel();
         renderGenerator();
         renderExports();
+        applyZenMode();
+        applySectionFolds();
       }
 
       // ---------- Generate ----------
@@ -1990,6 +2036,8 @@
           generatedAt: state.generatedAt,
           outputs: state.outputs,
           theme: state.theme,
+          zenMode: state.zenMode,
+          foldedSections: Array.from(collapsedSections),
         };
       }
 
@@ -2063,6 +2111,12 @@
           state.theme = data.theme;
           document.documentElement.setAttribute('data-theme', state.theme);
         }
+        state.zenMode = !!data.zenMode;
+        collapsedSections.clear();
+        if (Array.isArray(data.foldedSections)) {
+          data.foldedSections.map(String).forEach((k) => collapsedSections.add(k));
+        }
+        state.foldedSections = Array.from(collapsedSections);
         renderAll();
         if (!opts.silent) schedulePersist();
         if (!opts.silent) toast('Imported');
@@ -2083,6 +2137,26 @@
         });
 
         // Topbar actions
+        els.zenToggle.addEventListener('click', () => {
+          state.zenMode = !state.zenMode;
+          applyZenMode();
+          schedulePersist();
+        });
+        els.foldSections.addEventListener('click', () => {
+          const route = currentRoute();
+          const sections = Array.from(document.querySelectorAll(`.view[data-view="${route}"] .section[data-fold-key]`));
+          if (!sections.length) return;
+          const shouldCollapse = sections.some((section) => !section.classList.contains('collapsed'));
+          sections.forEach((section) => {
+            const key = section.dataset.foldKey;
+            if (shouldCollapse) collapsedSections.add(key);
+            else collapsedSections.delete(key);
+            setSectionCollapsed(section, shouldCollapse);
+          });
+          state.foldedSections = Array.from(collapsedSections);
+          schedulePersist();
+          updateFoldButtonState();
+        });
         $('themeToggle').addEventListener('click', () => {
           state.theme = state.theme === 'light' ? 'dark' : 'light';
           document.documentElement.setAttribute('data-theme', state.theme);
@@ -2109,6 +2183,7 @@
           state.tasks = d.tasks;
           state.outputs = null;
           state.generatedAt = null;
+          collapsedSections.clear();
           document.documentElement.setAttribute('data-theme', state.theme);
           renderAll();
           toast('Reset');
@@ -2271,6 +2346,10 @@
             e.preventDefault();
           } else if (e.key.toLowerCase() === 't') {
             $('themeToggle').click();
+          } else if (e.key.toLowerCase() === 'z') {
+            els.zenToggle.click();
+          } else if (e.key.toLowerCase() === 'f') {
+            els.foldSections.click();
           }
         });
       }
@@ -2301,8 +2380,10 @@
       // ---------- Init ----------
       function init() {
         document.documentElement.setAttribute('data-theme', state.theme);
+        initSectionFolds();
         wireEvents();
         restorePersistedState();
+
         // Ensure we have a valid hash route so deploy/refresh works
         if (!ROUTES.includes(currentRoute())) {
           window.history.replaceState(null, '', '#/dashboard');

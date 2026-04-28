@@ -15,7 +15,14 @@ Client-side routing via URL hash (`#/dashboard`, `#/planner`, ...) — safe for 
 
 ## Shared state
 
-All pages read and write a single in-memory state object. The sandbox blocks `localStorage`, `sessionStorage`, and cookies, so persistence happens through JSON export/import instead.
+All pages read and write a single in-memory state object.
+
+Additionally, the app attempts lightweight session persistence automatically:
+- Uses `localStorage` when available.
+- Falls back to `window.name` in locked-down environments.
+- Restores the previous session snapshot on reload when possible.
+
+When persistent browser storage is unavailable, JSON export/import remains the reliable manual backup path.
 
 Additionally, the app now attempts lightweight session persistence automatically:
 - Uses `localStorage` when available.
@@ -47,6 +54,8 @@ Additionally, the app now attempts lightweight session persistence automatically
 - `1`–`6` — jump between pages
 - `G` — regenerate outputs
 - `T` — toggle theme
+- `Z` — toggle Zen mode (minimal shell)
+- `F` — fold/unfold sections on current page
 
 ## Responsive
 
