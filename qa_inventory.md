@@ -14,11 +14,15 @@
 - Milestone table add/delete/edit changes milestone count, dashboard timeline, and exports.
 - Study inputs change weekly budget and detail values.
 - Task add/toggle/delete/filter changes task list, dashboard agenda, and progress tiles.
+- Task **Clear done** removes completed tasks and updates task list, dashboard agenda, and progress tiles.
 - Generator buttons update output cards and last-generated timestamps.
 - Export copy/download and restore textarea/file input affect JSON persistence flow.
 - Theme toggle and keyboard shortcut T switch appearance.
+- Zen mode toggle (button / Z) compacts shell to a minimalist navigation rail.
 - Keyboard shortcuts 1–6 change pages; G regenerates outputs.
+- Fold control (button / F) collapses and expands sections on the active page.
 - Mobile nav toggle and backdrop open/close the sidebar.
+- Reload behavior restores prior session state when browser storage (or fallback) is available.
 
 ## Exploratory checks
 - Custom milestone edits should survive horizon changes unless still on a default template.
